@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobFlex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Auth Screen -->
+    <div id="screen-auth" class="screen active">
+      <div class="auth-bg">
+        <div class="auth-orb orb1"></div>
+        <div class="auth-orb orb2"></div>
+      </div>
+      <div class="auth-content">
+        <div class="logo">
+          <div class="logo-mark">
+            <span class="logo-j">J</span>
+            <span class="logo-dot"></span>
+          </div>
+          <span class="logo-text">JobFlex</span>
+        </div>
+        <p class="auth-tagline">Track every opportunity.<br/>Miss nothing.</p>
+
+        <div id="login-form" class="auth-form">
+          <div class="field-group">
+            <input type="email" id="email" placeholder="Email address" class="field-input" />
+          </div>
+          <div class="field-group">
+            <input type="password" id="password" placeholder="Password" class="field-input" />
+          </div>
+          <div id="auth-error" class="error-msg hidden"></div>
+          <button id="btn-login" class="btn-primary">
+            <span class="btn-text">Sign In</span>
+            <div class="btn-spinner hidden"></div>
+          </button>
+          <button id="btn-guest" class="btn-ghost">Continue without account</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="screen-main" class="screen hidden">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <div class="logo-sm">
+            <span class="logo-j-sm">J</span>
+          </div>
+          <span class="app-title">JobFlex</span>
+        </div>
+        <div class="header-right">
+          <div id="sync-indicator" class="sync-dot offline" title="Not synced"></div>
+          <button id="btn-settings" class="icon-btn" title="Settings">⚙</button>
+          <button id="btn-logout" class="icon-btn" title="Sign out">↩</button>
+        </div>
+      </header>
+
+      <!-- Nav Tabs -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="detect">Detect</button>
+        <button class="tab-btn" data-tab="applications">Applications</button>
+        <button class="tab-btn" data-tab="analytics">Analytics</button>
+      </nav>
+
+      <!-- Detect Tab -->
+      <div id="tab-detect" class="tab-content active">
+        <div id="detect-job" class="detect-panel">
+          <div class="detect-status">
+            <div id="detect-icon" class="detect-icon scanning">
+              <div class="scan-ring"></div>
+              <div class="scan-ring ring2"></div>
+              <span class="detect-emoji">🔍</span>
+            </div>
+            <div id="detect-label" class="detect-label">Scanning page...</div>
+          </div>
+
+          <div id="job-card" class="job-card hidden">
+            <div class="job-card-header">
+              <div class="platform-badge" id="job-platform">—</div>
+              <div class="job-form-badge hidden" id="job-form-indicator">📝 Form detected</div>
+            </div>
+            <div class="job-title" id="job-title">—</div>
+            <div class="job-meta">
+              <span class="job-company" id="job-company">—</span>
+              <span class="job-sep">·</span>
+              <span class="job-location" id="job-location">—</span>
+            </div>
+            <div id="job-salary-row" class="job-salary hidden" id="job-salary">—</div>
+          </div>
+
+          <div id="manual-form" class="manual-form hidden">
+            <div class="form-label">Add manually</div>
+            <input type="text" id="m-title" placeholder="Job title *" class="field-input sm" />
+            <input type="text" id="m-company" placeholder="Company *" class="field-input sm" />
+            <input type="text" id="m-location" placeholder="Location" class="field-input sm" />
+            <input type="url" id="m-url" placeholder="Job URL" class="field-input sm" />
+          </div>
+
+          <div class="status-selector">
+            <div class="status-label">Status</div>
+            <div class="status-chips" id="status-chips">
+              <button class="chip active" data-status="Applied">Applied</button>
+              <button class="chip" data-status="Shortlisted">Shortlisted</button>
+              <button class="chip" data-status="Interview">Interview</button>
+              <button class="chip" data-status="Offer">Offer</button>
+              <button class="chip" data-status="Rejected">Rejected</button>
+            </div>
+          </div>
+
+          <textarea id="detect-notes" class="notes-input" placeholder="Notes (optional)..."></textarea>
+
+          <div class="detect-actions">
+            <button id="btn-save" class="btn-primary full">
+              <span>💾</span> Save Application
+            </button>
+            <button id="btn-manual-toggle" class="btn-outline full">
+              ✏️ Enter manually
+            </button>
+          </div>
+
+          <div id="save-success" class="save-success hidden">
+            <div class="success-icon">✓</div>
+            <div class="success-text">Application saved!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Applications Tab -->
+      <div id="tab-applications" class="tab-content hidden">
+        <div class="search-bar">
+          <input type="text" id="search-input" placeholder="Search jobs or companies..." class="search-input" />
+          <select id="filter-status" class="filter-select">
+            <option value="">All Status</option>
+            <option value="Applied">Applied</option>
+            <option value="Shortlisted">Shortlisted</option>
+            <option value="Interview">Interview</option>
+            <option value="Offer">Offer</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Hired">Hired</option>
+          </select>
+        </div>
+        <div id="apps-list" class="apps-list">
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">No applications yet.<br/>Start browsing job listings!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Tab -->
+      <div id="tab-analytics" class="tab-content hidden">
+        <div class="analytics-grid">
+          <div class="stat-card accent">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Total Applied</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-response">0%</div>
+            <div class="stat-label">Response Rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-recent">0</div>
+            <div class="stat-label">This Month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-avg-days">—</div>
+            <div class="stat-label">Avg Response Days</div>
+          </div>
+        </div>
+
+        <div class="section-title">By Status</div>
+        <div id="status-bars" class="status-bars"></div>
+
+        <div class="section-title">Top Companies</div>
+        <div id="top-companies" class="top-companies"></div>
+      </div>
+
+      <!-- Settings Panel -->
+      <div id="panel-settings" class="settings-panel hidden">
+        <div class="panel-header">
+          <button id="btn-close-settings" class="back-btn">← Back</button>
+          <span class="panel-title">Settings</span>
+        </div>
+        <div class="settings-body">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Auto-detect jobs</div>
+              <div class="setting-desc">Detect job pages automatically</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="s-autodetect" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Notifications</div>
+              <div class="setting-desc">Show desktop notifications</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="s-notifications" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">Sync with backend</div>
+              <div class="setting-desc">Send data to JobFlex server</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="s-sync" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row stacked">
+            <div class="setting-name">API Server URL</div>
+            <input type="url" id="s-api-url" placeholder="http://localhost:8000/api" class="field-input sm" />
+          </div>
+          <button id="btn-save-settings" class="btn-primary full mt">Save Settings</button>
+          <button id="btn-export" class="btn-outline full mt-sm">📥 Export as JSON</button>
+          <button id="btn-clear-data" class="btn-danger full mt-sm">🗑 Clear All Data</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="modal-edit" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-box">
+        <div class="modal-header">
+          <span class="modal-title">Edit Application</span>
+          <button id="btn-close-modal" class="icon-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="e-title" placeholder="Job title" class="field-input sm" />
+          <input type="text" id="e-company" placeholder="Company" class="field-input sm" />
+          <input type="text" id="e-location" placeholder="Location" class="field-input sm" />
+          <div class="status-chips" id="edit-status-chips">
+            <button class="chip" data-status="Applied">Applied</button>
+            <button class="chip" data-status="Shortlisted">Shortlisted</button>
+            <button class="chip" data-status="Interview">Interview</button>
+            <button class="chip" data-status="Offer">Offer</button>
+            <button class="chip" data-status="Hired">Hired</button>
+            <button class="chip" data-status="Rejected">Rejected</button>
+          </div>
+          <textarea id="e-notes" class="notes-input" placeholder="Notes..."></textarea>
+          <div class="modal-actions">
+            <button id="btn-save-edit" class="btn-primary">Save</button>
+            <button id="btn-delete-app" class="btn-danger-sm">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

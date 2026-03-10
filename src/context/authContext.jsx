@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../utils/api";
-
+import Loader from "../components/Loader";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -8,9 +8,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
+    
     try {
       const res = await api("get", "user/me/");
-      
       setUser(res.data);
     } catch(error) {
       setUser(null);
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     fetchUser();
   }, []);
-
+if(loading) return <Loader/>
   return (
     <AuthContext.Provider value={{ user, setUser, loading }}>
       {children}

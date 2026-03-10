@@ -2,14 +2,26 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import HomePage from './pages/Home';
+import LoginPage from './pages/login';
+import SignupPage from './pages/signup';
+import Sidebar from './components/Sidebar';
+import DashboardPage from './pages/Dashboard';
+import { AuthProvider } from './context/authContext';
+import ProtectedRoute from './protectedRoute';
 export default function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <h1 className="text-center pt-10 text-2xl font-semibold">
-        JobFlex Frontend
-      </h1>
-    </div>
+   <BrowserRouter>
+   <AuthProvider>
+   <Routes>
+<Route path="/" element={<HomePage />}/>
+<Route path="/login" element={<LoginPage />}/>
+<Route path="/signup" element={<SignupPage />}/>
+<Route path="/dashboard" element={<ProtectedRoute> <DashboardPage /> </ProtectedRoute>}/>
+</Routes>
+</AuthProvider>
+   </BrowserRouter>
   )
 }
 

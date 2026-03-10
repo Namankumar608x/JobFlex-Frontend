@@ -7,6 +7,7 @@ import HomePage from './pages/Home';
 import LoginPage from './pages/login';
 import SignupPage from './pages/signup';
 import Sidebar from './components/Sidebar';
+import JobSearch from './pages/JobSearch';
 import DashboardPage from './pages/Dashboard';
 import { AuthProvider } from './context/authContext';
 import ProtectedRoute from './protectedRoute';
@@ -19,6 +20,7 @@ export default function App() {
 <Route path="/login" element={<LoginPage />}/>
 <Route path="/signup" element={<SignupPage />}/>
 <Route path="/dashboard" element={<ProtectedRoute> <DashboardPage /> </ProtectedRoute>}/>
+<Route path="/job-search" element={<ProtectedRoute> <JobSearch /> </ProtectedRoute>}/>
 </Routes>
 </AuthProvider>
    </BrowserRouter>

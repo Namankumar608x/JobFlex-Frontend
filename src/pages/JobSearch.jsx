@@ -1,34 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Sidebar from "../components/Sidebar";
 
 const API_BASE = "http://localhost:8000/api/scraper";
 
-const COLORS = [
-  "from-pink-500 to-rose-500",
-  "from-violet-500 to-purple-500",
-  "from-blue-500 to-cyan-500",
-  "from-emerald-500 to-teal-500",
-  "from-orange-500 to-amber-500",
-  "from-fuchsia-500 to-pink-500",
-];
-
-const TAG_COLORS = [
-  "bg-pink-100 text-pink-700",
-  "bg-violet-100 text-violet-700",
-  "bg-blue-100 text-blue-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-orange-100 text-orange-700",
-  "bg-fuchsia-100 text-fuchsia-700",
-];
-
 const POPULAR_SEARCHES = [
   "Python", "React", "Django", "Machine Learning",
-  "Data Analyst", "Full Stack", "DevOps", "Java"
+  "Data Analyst", "Full Stack", "DevOps", "Java",
 ];
 
 const LOCATIONS = [
   "bangalore", "mumbai", "delhi", "hyderabad",
-  "pune", "chennai", "india", "remote"
+  "pune", "chennai", "india", "remote",
 ];
+
+const STATUS_COLORS = {
+  fresher:     "bg-green-50 text-green-700 border border-green-200",
+  experienced: "bg-amber-50 text-amber-600 border border-amber-200",
+};
+
+const SOURCE_META = {
+  Internshala: "bg-violet-100 text-violet-700",
+  LinkedIn:    "bg-blue-100 text-blue-700",
+  Indeed:      "bg-indigo-100 text-indigo-600",
+};
 
 export default function JobSearch() {
   const [query, setQuery] = useState("");
@@ -37,28 +31,25 @@ export default function JobSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
-  const [filterExp, setFilterExp] = useState("all");
+  const [filterExp, setFilterExp] = useState("All");
   const [sortBy, setSortBy] = useState("default");
   const [savedJobs, setSavedJobs] = useState([]);
-  const [activeTab, setActiveTab] = useState("search"); // search | saved
+  const [activeTab, setActiveTab] = useState("search");
 
-  // Load saved jobs from state
   const toggleSave = (job) => {
-    setSavedJobs(prev =>
-      prev.find(j => j.id === job.id)
-        ? prev.filter(j => j.id !== job.id)
+    setSavedJobs((prev) =>
+      prev.find((j) => j.id === job.id)
+        ? prev.filter((j) => j.id !== job.id)
         : [...prev, job]
     );
   };
-
-  const isSaved = (job) => savedJobs.some(j => j.id === job.id);
+  const isSaved = (job) => savedJobs.some((j) => j.id === job.id);
 
   const handleSearch = async (q = query, loc = location) => {
     if (!q.trim()) return;
     setLoading(true);
     setError("");
     setSearched(true);
-
     try {
       const res = await fetch(
         `${API_BASE}/scrape/?query=${encodeURIComponent(q)}&location=${encodeURIComponent(loc)}`
@@ -70,7 +61,7 @@ export default function JobSearch() {
         setError(data.message || "No jobs found.");
         setJobs([]);
       }
-    } catch (e) {
+    } catch {
       setError("Could not connect to backend. Make sure Django server is running.");
       setJobs([]);
     } finally {
@@ -78,23 +69,12 @@ export default function JobSearch() {
     }
   };
 
-  const handleLoadSaved = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/jobs/`);
-      const data = await res.json();
-      if (data.success) setJobs(data.jobs);
-    } catch (e) {
-      setError("Failed to load saved jobs.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filteredJobs = jobs
-    .filter(job => {
-      if (filterExp === "fresher") return job.experience?.toLowerCase().includes("no experience");
-      if (filterExp === "experienced") return !job.experience?.toLowerCase().includes("no experience");
+    .filter((job) => {
+      if (filterExp === "Fresher")
+        return job.experience?.toLowerCase().includes("no experience");
+      if (filterExp === "Experienced")
+        return !job.experience?.toLowerCase().includes("no experience");
       return true;
     })
     .sort((a, b) => {
@@ -108,337 +88,327 @@ export default function JobSearch() {
   const displayJobs = activeTab === "saved" ? savedJobs : filteredJobs;
 
   return (
-    <div style={{ fontFamily: "'Outfit', sans-serif" }} className="min-h-screen bg-gray-50">
-
-      {/* Google Font */}
+    <Sidebar>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
-        * { font-family: 'Outfit', sans-serif; }
-        .gradient-text {
-          background: linear-gradient(135deg, #f472b6, #a855f7, #3b82f6);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .card-hover {
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .card-hover:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-        }
-        .search-glow:focus-within {
-          box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
-        }
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.5); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+        .font-display { font-family: 'Fraunces', serif; }
+        * { font-family: 'DM Sans', sans-serif; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        .anim-1 { animation: fadeUp 0.4s ease 0.05s both; }
+        .anim-2 { animation: fadeUp 0.4s ease 0.12s both; }
+        .anim-3 { animation: fadeUp 0.4s ease 0.20s both; }
         @keyframes shimmer {
           0% { background-position: -200% center; }
           100% { background-position: 200% center; }
         }
         .shimmer-card {
-          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background: linear-gradient(90deg, #f4f4f5 25%, #e4e4e7 50%, #f4f4f5 75%);
           background-size: 200% auto;
           animation: shimmer 1.5s infinite;
         }
-        .tag-pill {
-          transition: all 0.2s ease;
-          cursor: pointer;
-        }
-        .tag-pill:hover {
-          transform: scale(1.05);
-        }
       `}</style>
 
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-lg">
-              <span className="text-white font-black text-sm">JF</span>
-            </div>
-            <span className="font-black text-xl tracking-tight">
-              Job<span className="gradient-text">Flex</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab("search")}
-              className={`px-4 py-2 rounded-full text-sm font-600 transition-all ${activeTab === "search" ? "bg-violet-600 text-white shadow-md" : "text-gray-500 hover:bg-gray-100"}`}
-            >
-              🔍 Search
-            </button>
-            <button
-              onClick={() => setActiveTab("saved")}
-              className={`px-4 py-2 rounded-full text-sm font-600 transition-all relative ${activeTab === "saved" ? "bg-pink-500 text-white shadow-md" : "text-gray-500 hover:bg-gray-100"}`}
-            >
-              ❤️ Saved
-              {savedJobs.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                  {savedJobs.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-16 text-center">
-
-          {/* Floating emoji */}
-          <div style={{ animation: "float 3s ease-in-out infinite" }} className="text-5xl mb-6">🚀</div>
-
-          <h1 className="text-5xl font-black tracking-tight mb-4 leading-tight">
-            Find Your <span className="gradient-text">Dream Job</span>
+      {/* ── Page Header ── */}
+      <div className="anim-1 flex items-center justify-between mb-8">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-zinc-900 tracking-tight">
+            Job Search
           </h1>
-          <p className="text-gray-500 text-lg mb-10 font-400">
-            Scraping real-time jobs from Internshala • Powered by Django REST API
+          <p className="text-zinc-400 text-sm mt-1 font-light">
+            Real-time jobs scraped from Internshala — find your next opportunity.
           </p>
+        </div>
 
-          {/* Search Box */}
-          <div className="max-w-3xl mx-auto">
-            <div className="search-glow bg-white rounded-2xl border-2 border-gray-200 p-2 flex gap-2 shadow-lg">
-              {/* Query input */}
-              <div className="flex-1 flex items-center gap-3 px-4 bg-gray-50 rounded-xl">
-                <span className="text-xl">💼</span>
-                <input
-                  type="text"
-                  placeholder="Job title, skill, company..."
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSearch()}
-                  className="flex-1 bg-transparent outline-none text-gray-800 font-500 text-base py-3"
-                />
-              </div>
-
-              {/* Location select */}
-              <div className="flex items-center gap-2 px-4 bg-gray-50 rounded-xl min-w-36">
-                <span className="text-xl">📍</span>
-                <select
-                  value={location}
-                  onChange={e => setLocation(e.target.value)}
-                  className="bg-transparent outline-none text-gray-700 font-500 text-sm cursor-pointer"
-                >
-                  {LOCATIONS.map(loc => (
-                    <option key={loc} value={loc}>
-                      {loc.charAt(0).toUpperCase() + loc.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Search Button */}
-              <button
-                onClick={() => handleSearch()}
-                disabled={loading || !query.trim()}
-                className="bg-gradient-to-r from-violet-600 to-pink-500 text-white px-8 py-3 rounded-xl font-700 text-base hover:opacity-90 disabled:opacity-50 transition-all shadow-lg hover:shadow-violet-200 hover:shadow-xl whitespace-nowrap"
-              >
-                {loading ? "..." : "Search Jobs"}
-              </button>
-            </div>
-
-            {/* Popular searches */}
-            <div className="flex flex-wrap justify-center gap-2 mt-5">
-              <span className="text-gray-400 text-sm font-500 mr-1 self-center">Popular:</span>
-              {POPULAR_SEARCHES.map((tag, i) => (
-                <button
-                  key={tag}
-                  onClick={() => { setQuery(tag); handleSearch(tag, location); }}
-                  className={`tag-pill px-3 py-1 rounded-full text-xs font-600 ${TAG_COLORS[i % TAG_COLORS.length]}`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* Tab toggle */}
+        <div className="flex items-center gap-1 bg-zinc-100 border border-zinc-200 rounded-xl p-1">
+          <button
+            onClick={() => setActiveTab("search")}
+            className={`text-xs font-medium px-4 py-2 rounded-lg transition-all ${
+              activeTab === "search"
+                ? "bg-zinc-900 text-white shadow-sm"
+                : "text-zinc-500 hover:text-zinc-900"
+            }`}
+          >
+            🔍 Search
+          </button>
+          <button
+            onClick={() => setActiveTab("saved")}
+            className={`text-xs font-medium px-4 py-2 rounded-lg transition-all relative ${
+              activeTab === "saved"
+                ? "bg-zinc-900 text-white shadow-sm"
+                : "text-zinc-500 hover:text-zinc-900"
+            }`}
+          >
+            ♥ Saved
+            {savedJobs.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                {savedJobs.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Results Section */}
-      <div className="max-w-6xl mx-auto px-6 py-10">
-
-        {/* Filters bar - show only when jobs exist */}
-        {displayJobs.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500 text-sm font-500">
-                {activeTab === "saved" ? `${savedJobs.length} saved jobs` : `${filteredJobs.length} jobs found`}
-              </span>
-              {searched && activeTab === "search" && (
-                <span className="bg-violet-100 text-violet-700 text-xs px-2 py-1 rounded-full font-600">
-                  "{query}" in {location}
-                </span>
-              )}
+      {/* ── Search Box (only on search tab) ── */}
+      {activeTab === "search" && (
+        <div className="anim-2 bg-white border border-zinc-200 rounded-2xl p-6 mb-6">
+          <div className="flex gap-3 mb-4">
+            {/* Query */}
+            <div className="flex-1 flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 focus-within:border-zinc-400 transition-colors">
+              <span className="text-zinc-400 text-sm">💼</span>
+              <input
+                type="text"
+                placeholder="Job title, skill, or company..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="flex-1 bg-transparent outline-none text-zinc-800 text-sm font-medium placeholder:text-zinc-400"
+              />
             </div>
 
-            {activeTab === "search" && (
-              <div className="flex gap-3">
-                {/* Experience filter */}
-                <div className="flex bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                  {[["all", "All"], ["fresher", "Fresher"], ["experienced", "Experienced"]].map(([val, label]) => (
-                    <button
-                      key={val}
-                      onClick={() => setFilterExp(val)}
-                      className={`px-4 py-2 text-xs font-600 transition-all ${filterExp === val ? "bg-violet-600 text-white" : "text-gray-500 hover:bg-gray-50"}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+            {/* Location */}
+            <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 focus-within:border-zinc-400 transition-colors min-w-40">
+              <span className="text-zinc-400 text-sm">📍</span>
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="bg-transparent outline-none text-zinc-700 text-sm font-medium cursor-pointer"
+              >
+                {LOCATIONS.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc.charAt(0).toUpperCase() + loc.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                {/* Sort */}
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value)}
-                  className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs font-600 text-gray-600 outline-none shadow-sm"
-                >
-                  <option value="default">Sort: Default</option>
-                  <option value="salary">Sort: Salary ↑</option>
-                </select>
-              </div>
-            )}
+            {/* Button */}
+            <button
+              onClick={() => handleSearch()}
+              disabled={loading || !query.trim()}
+              className="bg-zinc-900 text-white px-7 py-3 rounded-xl text-sm font-semibold hover:bg-zinc-700 disabled:opacity-40 transition-all shadow-sm"
+            >
+              {loading ? "Searching..." : "Search Jobs"}
+            </button>
           </div>
-        )}
 
-        {/* Loading Skeleton */}
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="shimmer-card h-4 w-3/4 rounded-full mb-3"></div>
-                <div className="shimmer-card h-3 w-1/2 rounded-full mb-6"></div>
-                <div className="shimmer-card h-3 w-full rounded-full mb-2"></div>
-                <div className="shimmer-card h-3 w-2/3 rounded-full mb-6"></div>
-                <div className="shimmer-card h-8 w-full rounded-xl"></div>
-              </div>
+          {/* Popular searches */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider mr-1">
+              Popular:
+            </span>
+            {POPULAR_SEARCHES.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => {
+                  setQuery(tag);
+                  handleSearch(tag, location);
+                }}
+                className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-600 border border-zinc-200 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all"
+              >
+                {tag}
+              </button>
             ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Error */}
-        {error && !loading && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">😕</div>
-            <p className="text-gray-500 font-500">{error}</p>
-            <p className="text-gray-400 text-sm mt-2">Try a different search term or location</p>
+      {/* ── Filters bar ── */}
+      {displayJobs.length > 0 && (
+        <div className="anim-2 flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-zinc-500 font-medium">
+              {activeTab === "saved"
+                ? `${savedJobs.length} saved jobs`
+                : `${filteredJobs.length} jobs found`}
+            </span>
+            {searched && activeTab === "search" && (
+              <span className="bg-zinc-100 text-zinc-600 border border-zinc-200 text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                "{query}" · {location}
+              </span>
+            )}
           </div>
-        )}
 
-        {/* Empty state */}
-        {!loading && !error && searched && displayJobs.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🔍</div>
-            <p className="text-gray-500 font-500">No jobs found for your search</p>
-            <p className="text-gray-400 text-sm mt-2">Try different keywords or location</p>
-          </div>
-        )}
+          {activeTab === "search" && (
+            <div className="flex items-center gap-3">
+              {/* Experience filter pills */}
+              <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-1">
+                {["All", "Fresher", "Experienced"].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilterExp(f)}
+                    className={`text-[11px] font-medium px-3 py-1.5 rounded-md transition-all ${
+                      filterExp === f
+                        ? "bg-zinc-900 text-white shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-white"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
 
-        {/* Saved empty */}
-        {activeTab === "saved" && savedJobs.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">❤️</div>
-            <p className="text-gray-500 font-500">No saved jobs yet</p>
-            <p className="text-gray-400 text-sm mt-2">Click the heart on any job to save it</p>
-          </div>
-        )}
+              {/* Sort */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-white border border-zinc-200 rounded-lg px-3 py-2 text-[11px] font-medium text-zinc-600 outline-none hover:border-zinc-400 transition-colors"
+              >
+                <option value="default">Sort: Default</option>
+                <option value="salary">Sort: Salary ↑</option>
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Initial state */}
-        {!loading && !error && !searched && activeTab === "search" && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">✨</div>
-            <p className="text-gray-500 font-500">Search for jobs above to get started</p>
-            <p className="text-gray-400 text-sm mt-2">Real-time data scraped from Internshala</p>
-          </div>
-        )}
+      {/* ── Loading Skeleton ── */}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl p-6 border border-zinc-100"
+            >
+              <div className="shimmer-card h-3 w-3/4 rounded-full mb-3" />
+              <div className="shimmer-card h-2.5 w-1/2 rounded-full mb-6" />
+              <div className="shimmer-card h-2.5 w-full rounded-full mb-2" />
+              <div className="shimmer-card h-2.5 w-2/3 rounded-full mb-6" />
+              <div className="shimmer-card h-9 w-full rounded-xl" />
+            </div>
+          ))}
+        </div>
+      )}
 
-        {/* Job Cards Grid */}
-        {!loading && displayJobs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayJobs.map((job, i) => (
-              <div key={job.id} className="card-hover bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* ── Error ── */}
+      {error && !loading && (
+        <div className="bg-white border border-zinc-200 rounded-2xl p-16 text-center">
+          <div className="text-4xl mb-3">◈</div>
+          <p className="text-sm font-semibold text-zinc-700 mb-1">{error}</p>
+          <p className="text-xs text-zinc-400">Try a different search term or location</p>
+        </div>
+      )}
 
-                {/* Card color top bar */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${COLORS[i % COLORS.length]}`}></div>
+      {/* ── Empty / Initial states ── */}
+      {!loading && !error && searched && displayJobs.length === 0 && (
+        <div className="bg-white border border-zinc-200 rounded-2xl p-16 text-center">
+          <div className="text-4xl mb-3">◈</div>
+          <p className="text-sm font-semibold text-zinc-700 mb-1">No jobs found</p>
+          <p className="text-xs text-zinc-400">Try different keywords or location</p>
+        </div>
+      )}
 
+      {activeTab === "saved" && savedJobs.length === 0 && (
+        <div className="bg-white border border-zinc-200 rounded-2xl p-16 text-center">
+          <div className="text-4xl mb-3">♥</div>
+          <p className="text-sm font-semibold text-zinc-700 mb-1">No saved jobs yet</p>
+          <p className="text-xs text-zinc-400">Click the heart on any job to save it</p>
+        </div>
+      )}
+
+      {!loading && !error && !searched && activeTab === "search" && (
+        <div className="bg-white border border-zinc-200 rounded-2xl p-16 text-center">
+          <div className="text-4xl mb-3">✦</div>
+          <p className="text-sm font-semibold text-zinc-700 mb-1">
+            Search for jobs above to get started
+          </p>
+          <p className="text-xs text-zinc-400">Real-time data scraped from Internshala</p>
+        </div>
+      )}
+
+      {/* ── Job Cards ── */}
+      {!loading && displayJobs.length > 0 && (
+        <div className="anim-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {displayJobs.map((job) => {
+            const isFresher = job.experience
+              ?.toLowerCase()
+              .includes("no experience");
+            const expLabel = isFresher ? "Fresher" : job.experience;
+            const expCls = isFresher
+              ? STATUS_COLORS.fresher
+              : STATUS_COLORS.experienced;
+            const sourceCls =
+              SOURCE_META[job.source] ?? "bg-zinc-100 text-zinc-600";
+
+            return (
+              <div
+                key={job.id}
+                className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              >
                 <div className="p-6">
                   {/* Header */}
                   <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1 pr-2">
-                      <h3 className="font-700 text-gray-900 text-base leading-snug mb-1">
-                        {job.title}
-                      </h3>
-                      <p className="text-gray-500 text-sm font-500">{job.company}</p>
+                    <div className="flex items-center gap-3 flex-1 pr-2">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {job.company?.[0] ?? "?"}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-zinc-900 leading-snug">
+                          {job.title}
+                        </h3>
+                        <p className="text-xs text-zinc-400 font-light mt-0.5">
+                          {job.company}
+                        </p>
+                      </div>
                     </div>
                     <button
                       onClick={() => toggleSave(job)}
-                      className="text-2xl transition-transform hover:scale-125 flex-shrink-0"
+                      className={`text-lg transition-all hover:scale-110 flex-shrink-0 ${
+                        isSaved(job) ? "text-red-500" : "text-zinc-300 hover:text-zinc-500"
+                      }`}
                     >
-                      {isSaved(job) ? "❤️" : "🤍"}
+                      {isSaved(job) ? "♥" : "♡"}
                     </button>
                   </div>
 
-                  {/* Tags row */}
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    {/* Location */}
-                    <span className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full font-500">
-                      📍 {job.location?.split(",")[0]?.trim()}
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1.5 mb-5">
+                    <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
+                      📍 {job.location?.split(",")?.[0]?.trim()}
                     </span>
-
-                    {/* Experience */}
-                    <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-500 ${job.experience?.toLowerCase().includes("no experience") ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                      {job.experience?.toLowerCase().includes("no experience") ? "✅ Fresher" : `💼 ${job.experience}`}
+                    <span
+                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${expCls}`}
+                    >
+                      {isFresher ? "✓ " : ""}
+                      {expLabel}
                     </span>
-
-                    {/* Source */}
-                    <span className="flex items-center gap-1 bg-gray-100 text-gray-500 text-xs px-2.5 py-1 rounded-full font-500">
-                      🌐 {job.source}
+                    <span
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${sourceCls}`}
+                    >
+                      {job.source}
                     </span>
                   </div>
 
                   {/* Salary */}
-                  <div className={`bg-gradient-to-r ${COLORS[i % COLORS.length]} p-3 rounded-xl mb-5`}>
-                    <p className="text-white text-xs font-500 opacity-80 mb-0.5">Salary</p>
-                    <p className="text-white font-700 text-sm">{job.salary}</p>
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-3 mb-5">
+                    <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider mb-0.5">
+                      Salary
+                    </p>
+                    <p className="text-sm font-semibold text-zinc-900">
+                      {job.salary || "Not disclosed"}
+                    </p>
                   </div>
 
-                  {/* Apply Button */}
+                  {/* Apply button */}
                   <a
                     href={job.job_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`block w-full text-center bg-gradient-to-r ${COLORS[i % COLORS.length]} text-white py-2.5 rounded-xl font-600 text-sm hover:opacity-90 transition-opacity shadow-sm`}
+                    className="block w-full text-center bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-zinc-700 transition-all shadow-sm"
                   >
                     Apply Now →
                   </a>
 
                   {/* Scraped time */}
-                  <p className="text-center text-gray-300 text-xs mt-3 font-400">
+                  <p className="text-center text-zinc-300 text-[10px] mt-3">
                     Scraped {new Date(job.scraped_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-100 bg-white mt-10 py-8 text-center">
-        <p className="text-gray-400 text-sm">
-          Built with <span className="text-pink-500">♥</span> using{" "}
-          <span className="font-600 text-violet-600">Django REST Framework</span> +{" "}
-          <span className="font-600 text-blue-500">React</span> +{" "}
-          <span className="font-600 text-emerald-600">Neon PostgreSQL</span>
-        </p>
-      </footer>
-    </div>
+            );
+          })}
+        </div>
+      )}
+    </Sidebar>
   );
 }

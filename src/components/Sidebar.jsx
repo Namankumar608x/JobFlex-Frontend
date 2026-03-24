@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
   { path: "/dashboard",       icon: "⊞", label: "Dashboard"    },
-  { path: "/applications",    icon: "◈", label: "Applications" },
+  { path: "/job-search",    icon: "◈", label: "Applications" },
   { path: "/analytics",       icon: "◑", label: "Analytics"    },
   { path: "/email-logs",      icon: "✉", label: "Email Logs"   },
   { path: "/settings",        icon: "◻", label: "Settings"     },

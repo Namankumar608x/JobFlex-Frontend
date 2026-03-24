@@ -11,6 +11,7 @@ import JobSearch from './pages/JobSearch';
 import DashboardPage from './pages/Dashboard';
 import { AuthProvider } from './context/authContext';
 import ProtectedRoute from './protectedRoute';
+import ScanEmailsPage from './pages/ScanEmails';
 export default function App() {
   return (
    <BrowserRouter>
@@ -21,6 +22,7 @@ export default function App() {
 <Route path="/signup" element={<SignupPage />}/>
 <Route path="/dashboard" element={<ProtectedRoute> <DashboardPage /> </ProtectedRoute>}/>
 <Route path="/job-search" element={<ProtectedRoute> <JobSearch /> </ProtectedRoute>}/>
+<Route path="/scan" element={<ProtectedRoute> <ScanEmailsPage /> </ProtectedRoute>}/>
 </Routes>
 </AuthProvider>
    </BrowserRouter>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { useAuth } from "../context/authContext";
 function PasswordStrength({ password }) {
   const calc = () => {
     if (!password) return 0;
@@ -45,6 +46,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [showCfm, setShowCfm] = useState(false);
+  const {user}=useAuth();
+  if(user) navigate("/dashboard");
   const googleLogin = async (response) => {
 
   if (!response?.credential) {

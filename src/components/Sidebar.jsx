@@ -1,8 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
+import { useAuth } from "../context/authContext";
 const NAV_ITEMS = [
   { path: "/dashboard",       icon: "⊞", label: "Dashboard"    },
-  { path: "/applications",    icon: "◈", label: "Applications" },
+  { path: "/job-search",    icon: "◈", label: "New Postings" },
   { path: "/analytics",       icon: "◑", label: "Analytics"    },
   { path: "/email-logs",      icon: "✉", label: "Email Logs"   },
   { path: "/settings",        icon: "◻", label: "Settings"     },
@@ -11,7 +11,7 @@ const NAV_ITEMS = [
 export default function Sidebar({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-
+ const {user}=useAuth();
   return (
     <div className="flex h-screen bg-zinc-50 overflow-hidden">
       <style>{`
@@ -55,22 +55,22 @@ export default function Sidebar({ children }) {
         </nav>
 
         {/* Gmail connection status */}
-        <div className="mx-3 mb-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+        {/* <div className="mx-3 mb-3 p-3 bg-green-50 border border-green-200 rounded-xl">
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" style={{animation:"pulse 2s infinite"}} />
             <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-            <span className="text-[11px] font-semibold text-green-700">Gmail Connected</span>
-          </div>
-          <p className="text-[10px] text-green-600">Auto-tracking recruiter emails</p>
-        </div>
+            {/* <span className="text-[11px] font-semibold text-green-700">Gmail Connected</span> */}
+          {/* </div> */}
+          {/* <p className="text-[10px] text-green-600">Auto-tracking recruiter emails</p> */}
+        {/* </div> */} 
 
         {/* User */}
         <div className="border-t border-zinc-100 px-3 py-4">
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 cursor-pointer transition-all group">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">AS</div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user.uname.split("")[0]}</div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-zinc-900 truncate">Aarav Shah</div>
-              <div className="text-[11px] text-zinc-400 truncate">aarav@email.com</div>
+              <div className="text-sm font-semibold text-zinc-900 truncate">{user.uname}</div>
+              <div className="text-[11px] text-zinc-400 truncate">{user.email}</div>
             </div>
             <button
               onClick={() => navigate("/login")}

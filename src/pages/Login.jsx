@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { useAuth } from "../context/authContext";
 
 const NOTIFICATIONS = [
   { label: "New interview scheduled", sub: "Stripe · Frontend Engineer", dot: "bg-amber-400" },
@@ -16,7 +17,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
   const [showPwd, setShowPwd] = useState(false);
-
+const {user}=useAuth();
+if(user) navigate("/dashboard");
   const update = (k) => (e) => { setError(""); setForm(p => ({ ...p, [k]: e.target.value })); };
 
 const googleLogin = async (response) => {

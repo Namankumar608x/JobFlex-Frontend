@@ -71,6 +71,7 @@ export default function HomePage() {
     const {user}=useAuth();
     const navigate=useNavigate();
     console.log(user);
+
   return (
     <div className="min-h-screen bg-zinc-50">
       <style>{`

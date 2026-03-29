@@ -67,7 +67,7 @@ export default function Sidebar({ children }) {
         {/* User */}
         <div className="border-t border-zinc-100 px-3 py-4">
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 cursor-pointer transition-all group">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user.uname.split("")[0]}</div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user?.uname}</div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-zinc-900 truncate">{user.uname}</div>
               <div className="text-[11px] text-zinc-400 truncate">{user.email}</div>

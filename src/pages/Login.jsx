@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [error, setError]     = useState("");
   const [showPwd, setShowPwd] = useState(false);
 const {user}=useAuth();
-if(user) navigate("/dashboard");
+
   const update = (k) => (e) => { setError(""); setForm(p => ({ ...p, [k]: e.target.value })); };
 
 const googleLogin = async (response) => {

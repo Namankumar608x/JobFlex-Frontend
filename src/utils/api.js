@@ -11,13 +11,18 @@ client.interceptors.response.use(
   async (error) => {
 
     const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-
+    
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/user/login") &&
+      !originalRequest.url.includes("/user/register") &&
+      !originalRequest.url.includes("/user/refresh")
+    ) {
       originalRequest._retry = true;
 
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/user/refresh/`,
+      await client.post(
+        `user/refresh/`,
         {},
         { withCredentials: true }
       );

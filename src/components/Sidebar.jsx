@@ -16,8 +16,7 @@ const NAV_ITEMS = [
   { path: "/dashboard",       icon: <LayoutDashboard size={16}/>, label: "Dashboard"    },
   { path: "/applications", icon: <Briefcase size={16} />, label: "Applications" },
   { path: "/job-search",    icon: <Search size={16}/>, label: "New Postings" },
-  { path: "/analytics",       icon: <BarChart3 size={16} />, label: "Analytics"    },
-  { path: "/email-logs",      icon: <Mail size={16} />, label: "Email Logs"   },
+  { path: "/scan",      icon: <Mail size={16} />, label: "Email Logs"   },
   { path: "/notifications", icon: <Bell size={16} />, label: "Notifications" },
   { path: "/resume", icon: <FileText size={16} />, label: "ATS Checker" }
 ];
@@ -25,7 +24,7 @@ const NAV_ITEMS = [
 export default function Sidebar({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
- const {user}=useAuth();
+ const {user,logout}=useAuth();
   return (
     <div className="flex h-screen bg-zinc-50 overflow-hidden">
       <style>{`
@@ -49,7 +48,7 @@ export default function Sidebar({ children }) {
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold px-3 mb-3">Menu</p>
           {NAV_ITEMS.map(({ path, icon, label }) => {
-            const active = location.pathname === path;
+            const active = location.pathname.startsWith(path);
             return (
               <Link key={path} to={path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all no-underline
@@ -62,6 +61,11 @@ export default function Sidebar({ children }) {
                 {label}
                 {/*label === "Email Logs" && (
                   <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${active ? "bg-white/20 text-white" : "bg-amber-100 text-amber-600"}`}>3</span>
+                )*/}
+                {/*label === "Notifications" && unreadCount > 0 && (
+                  <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
+                    {unreadCount}
+                  </span>
                 )*/}
               </Link>
             );
@@ -83,15 +87,18 @@ export default function Sidebar({ children }) {
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 cursor-pointer transition-all group">
         {/* <button onClick={()=>navigate("/profile")}>*/}
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user?.uname || "T"}</div>
-            <button onClick={()=>navigate("/profile")} className="flex-1 min-w-0">
+            <button onClick={()=>navigate("/profile")} className="flex-1 min-w-0 cursor-pointer">
               <div className="text-sm font-semibold text-zinc-900 truncate">{user?.uname || "Tarun"}</div>
               <div className="text-[11px] text-zinc-400 truncate">{user?.email || "tarundeepakjain@gmail.com"}</div>
             </button>
          {/*</button>*/}
             <LogOut 
-            onClick={() => navigate("/login")}
-            size={16}
-            title="Log out"
+              onClick={async () => {
+                await logout();
+                navigate("/login");
+              }}
+              size={16}
+              title="Log out"
             />
           </div>
         </div>

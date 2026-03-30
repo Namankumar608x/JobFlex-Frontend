@@ -1,348 +1,334 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { 
+  Calendar, 
+  Code, 
+  ExternalLink, 
+  Briefcase, 
+  Target, 
+  Award, 
+  Activity, 
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Star,
+  Globe,
+  TrendingUp,
+  ChevronRight,
+  Zap,
+  User,
+  ArrowRight
+} from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import Heatmap from "../components/Heatmap"; 
+import { useAuth } from "../context/authContext";
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-const STATS = [
-  { label: "Total Applied",  value: "24", delta: "+3 this week",  deltaPos: true,  icon: "◈", iconBg: "bg-zinc-100",   iconColor: "text-zinc-600" },
-  { label: "Shortlisted",    value: "6",  delta: "+1 this week",  deltaPos: true,  icon: "★", iconBg: "bg-amber-50",   iconColor: "text-amber-500" },
-  { label: "Interviews",     value: "4",  delta: "2 upcoming",    deltaPos: true,  icon: "◉", iconBg: "bg-blue-50",    iconColor: "text-blue-500" },
-  { label: "Offers",         value: "2",  delta: "74% reply rate",deltaPos: true,  icon: "✦", iconBg: "bg-green-50",   iconColor: "text-green-600" },
-  { label: "Rejected",       value: "8",  delta: "-2 from last mo",deltaPos: false, icon: "✕", iconBg: "bg-red-50",     iconColor: "text-red-500"  },
-];
+// ── Custom Icons ─────────────────────────────────────────────────────────────
 
-const APPLICATIONS = [
-  { id:1, company:"Stripe",   role:"Frontend Engineer",    date:"Mar 05, 2025", status:"Interview",  source:"LinkedIn",  lastUpdate:"2d ago" },
-  { id:2, company:"Linear",   role:"Product Designer",     date:"Mar 03, 2025", status:"Applied",    source:"Chrome Ext","lastUpdate":"4d ago" },
-  { id:3, company:"Vercel",   role:"Software Engineer II", date:"Feb 28, 2025", status:"Offer",      source:"Manual",    lastUpdate:"1w ago" },
-  { id:4, company:"Figma",    role:"Growth Engineer",      date:"Feb 25, 2025", status:"Rejected",   source:"Indeed",    lastUpdate:"1w ago" },
-  { id:5, company:"Notion",   role:"Backend Engineer",     date:"Feb 20, 2025", status:"Shortlisted",source:"LinkedIn",  lastUpdate:"2w ago" },
-  { id:6, company:"Loom",     role:"Full Stack Engineer",  date:"Feb 18, 2025", status:"Applied",    source:"Chrome Ext","lastUpdate":"2w ago" },
-  { id:7, company:"Supabase", role:"Developer Advocate",   date:"Feb 14, 2025", status:"Interview",  source:"Manual",    lastUpdate:"3w ago" },
-];
+const GitHubIcon = ({ size = 20, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.28 1.15-.28 2.35 0 3.5-.73 1.02-1.08 2.25-1 3.5 0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
 
-const ACTIVITY = [
-  { type:"email",  text:"Stripe replied — interview scheduled for Mar 12",  time:"2 hours ago",  color:"text-blue-500",  dot:"bg-blue-400" },
-  { type:"status", text:"Vercel application moved to Offer stage",           time:"1 day ago",    color:"text-green-600", dot:"bg-green-400" },
-  { type:"add",    text:"New application added: Linear · Product Designer",  time:"4 days ago",   color:"text-zinc-600",  dot:"bg-zinc-400" },
-  { type:"email",  text:"Figma replied — position has been filled",          time:"1 week ago",   color:"text-red-500",   dot:"bg-red-400" },
-  { type:"add",    text:"New application added: Notion · Backend Engineer",  time:"2 weeks ago",  color:"text-zinc-600",  dot:"bg-zinc-400" },
-];
+// ── Reusable Donut Chart Component ───────────────────────────────────────────
 
-const STATUS_META = {
-  "Applied":     { cls: "bg-blue-50 text-blue-600 border border-blue-200" },
-  "Shortlisted": { cls: "bg-amber-50 text-amber-600 border border-amber-200" },
-  "Interview":   { cls: "bg-violet-50 text-violet-600 border border-violet-200" },
-  "Offer":       { cls: "bg-green-50 text-green-700 border border-green-200" },
-  "Rejected":    { cls: "bg-red-50 text-red-500 border border-red-200" },
-};
-
-const SOURCE_META = {
-  "LinkedIn":   "bg-blue-100 text-blue-700",
-  "Chrome Ext": "bg-zinc-100 text-zinc-600",
-  "Manual":     "bg-zinc-100 text-zinc-600",
-  "Indeed":     "bg-indigo-100 text-indigo-600",
-};
-
-// ── Mini bar chart ────────────────────────────────────────────────────────────
-const BAR_DATA = [
-  { month:"Oct", val:3 }, { month:"Nov", val:5 }, { month:"Dec", val:2 },
-  { month:"Jan", val:7 }, { month:"Feb", val:4 }, { month:"Mar", val:6 },
-];
-const MAX_VAL = Math.max(...BAR_DATA.map(d => d.val));
-
-function BarChart() {
-  return (
-    <div className="flex items-end gap-2 h-24 mt-4">
-      {BAR_DATA.map((d, i) => (
-        <div key={d.month} className="flex flex-col items-center gap-1 flex-1">
-          <div
-            className="w-full rounded-t-md bg-zinc-900 transition-all duration-500"
-            style={{ height: `${(d.val / MAX_VAL) * 80}px`, opacity: i === BAR_DATA.length - 1 ? 1 : 0.25 + (i / BAR_DATA.length) * 0.55 }}
-          />
-          <span className="text-[10px] text-zinc-400">{d.month}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Donut chart (SVG) ─────────────────────────────────────────────────────────
-const DONUT_DATA = [
-  { label:"Applied",     val:10, color:"#18181b" },
-  { label:"Shortlisted", val:6,  color:"#f59e0b" },
-  { label:"Interview",   val:4,  color:"#8b5cf6" },
-  { label:"Offer",       val:2,  color:"#22c55e" },
-  { label:"Rejected",    val:8,  color:"#ef4444" },
-];
-const TOTAL = DONUT_DATA.reduce((a, d) => a + d.val, 0);
-
-function DonutChart() {
-  let cumulative = 0;
-  const R = 42, CX = 56, CY = 56, strokeW = 14;
-  const circ = 2 * Math.PI * R;
+const CodingDonutChart = ({ easy, medium, hard, total }) => {
+  const size = 100;
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  
+  const totalVal = (easy + medium + hard) || 1;
+  const easyPct = (easy / totalVal) * circumference;
+  const mediumPct = (medium / totalVal) * circumference;
+  const hardPct = (hard / totalVal) * circumference;
 
   return (
-    <div className="flex items-center gap-6">
-      <svg width="112" height="112" viewBox="0 0 112 112">
-        {DONUT_DATA.map((d) => {
-          const fraction = d.val / TOTAL;
-          const dash = fraction * circ;
-          const gap = circ - dash;
-          const offset = circ * (1 - cumulative);
-          cumulative += fraction;
-          return (
-            <circle
-              key={d.label}
-              cx={CX} cy={CY} r={R}
-              fill="none" stroke={d.color} strokeWidth={strokeW}
-              strokeDasharray={`${dash} ${gap}`}
-              strokeDashoffset={offset}
-              style={{ transition: "all 0.5s ease", transform: "rotate(-90deg)", transformOrigin: `${CX}px ${CY}px` }}
-            />
-          );
-        })}
-        <text x={CX} y={CY - 4} textAnchor="middle" className="font-display" style={{fontFamily:"Fraunces,serif",fontWeight:800,fontSize:18,fill:"#18181b"}}>{TOTAL}</text>
-        <text x={CX} y={CY + 12} textAnchor="middle" style={{fontSize:9,fill:"#a1a1aa",fontFamily:"DM Sans,sans-serif"}}>total</text>
+    <div className="relative flex items-center justify-center w-32 h-32">
+      <svg width={size} height={size} className="transform -rotate-90">
+        <circle cx={size/2} cy={size/2} r={radius} stroke="#f4f4f5" strokeWidth={strokeWidth} fill="transparent" />
+        <circle cx={size/2} cy={size/2} r={radius} stroke="#10b981" strokeWidth={strokeWidth} fill="transparent" 
+          strokeDasharray={`${easyPct} ${circumference}`} />
+        <circle cx={size/2} cy={size/2} r={radius} stroke="#f59e0b" strokeWidth={strokeWidth} fill="transparent" 
+          strokeDasharray={`${mediumPct} ${circumference}`} strokeDashoffset={-easyPct} />
+        <circle cx={size/2} cy={size/2} r={radius} stroke="#f43f5e" strokeWidth={strokeWidth} fill="transparent" 
+          strokeDasharray={`${hardPct} ${circumference}`} strokeDashoffset={-(easyPct + mediumPct)} />
       </svg>
-
-      <div className="space-y-2">
-        {DONUT_DATA.map(d => (
-          <div key={d.label} className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{background:d.color}} />
-            <span className="text-[12px] text-zinc-500 w-20">{d.label}</span>
-            <span className="text-[12px] font-semibold text-zinc-900">{d.val}</span>
-          </div>
-        ))}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xl font-bold text-zinc-900 leading-none tabular-nums">{total}</span>
+        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter mt-1">Solved</span>
       </div>
     </div>
   );
-}
+};
 
-// ── Dashboard Page ────────────────────────────────────────────────────────────
-export default function DashboardPage() {
-  const [filter, setFilter] = useState("All");
-  const [deleteId, setDeleteId] = useState(null);
-  const [apps, setApps] = useState(APPLICATIONS);
+// ── Static Content ───────────────────────────────────────────────────────────
 
-  const filters = ["All", "Applied", "Shortlisted", "Interview", "Offer", "Rejected"];
-  const filtered = filter === "All" ? apps : apps.filter(a => a.status === filter);
+const SHEETS = [
+  { name: "Striver A2Z Sheet", desc: "Step-by-step DSA mastery guide.", link: "https://takeuforward.org/strivers-a2z-dsa-course-sheet-2/" },
+  { name: "NeetCode 150", desc: "The essential LeetCode patterns.", link: "https://neetcode.io/practice" },
+  { name: "CSES Problem Set", desc: "Hardcore algorithmic practice.", link: "https://cses.fi/problemset/" }
+];
 
-  const handleDelete = (id) => {
-    setApps(prev => prev.filter(a => a.id !== id));
-    setDeleteId(null);
-  };
+const EVENTS = [
+  { name: "GSoC 2026", date: "2026-03-25", type: "Open Source", link: "https://summerofcode.withgoogle.com/" },
+  { name: "Google STEP Internship", date: "2025-10-15", type: "Internship", link: "https://buildyourfuture.withgoogle.com/programs/step" },
+  { name: "Uber Hackercup", date: "2025-07-20", type: "Competition", link: "https://www.uber.com/careers" },
+  { name: "Meta Hacker Cup", date: "2025-08-14", type: "Competition", link: "https://www.facebook.com/codingcompetitions/hacker-cup" }
+].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+// ── Main Dashboard ───────────────────────────────────────────────────────────
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Simulated Live Stats State
+  const [codingStats, setCodingStats] = useState({
+    leetcode: { solved: 452, easy: 120, medium: 280, hard: 52, rank: "Top 5%" },
+    codeforces: { rating: 1542, solved: 210, easy: 40, medium: 120, hard: 50, rank: "Specialist" },
+    github: { contributions: 842, repos: 34, stars: 12 }
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const statsLoop = setInterval(() => {
+      setCodingStats(prev => ({
+        ...prev,
+        leetcode: { ...prev.leetcode, solved: prev.leetcode.solved + (Math.random() > 0.95 ? 1 : 0) },
+        github: { ...prev.github, contributions: prev.github.contributions + (Math.random() > 0.8 ? 1 : 0) }
+      }));
+    }, 5000);
+    return () => { clearInterval(timer); clearInterval(statsLoop); };
+  }, []);
+
+  const formattedDate = useMemo(() => {
+    return currentTime.toLocaleString('en-US', {
+      weekday: 'short', day: 'numeric', month: 'short',
+      hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+    }).replace(',', ' ·');
+  }, [currentTime]);
+
+  const applicationSummary = [
+    { label: "Applied", value: 24, icon: Briefcase, color: "text-zinc-600", bg: "bg-zinc-100" },
+    { label: "Shortlisted", value: 6, icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
+    { label: "Interviews", value: 4, icon: Target, color: "text-blue-500", bg: "bg-blue-50" },
+    { label: "Offers", value: 2, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
+  ];
 
   return (
-    <Sidebar>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-        .font-display { font-family: 'Fraunces', serif; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-        .anim-1 { animation: fadeUp 0.4s ease 0.05s both; }
-        .anim-2 { animation: fadeUp 0.4s ease 0.12s both; }
-        .anim-3 { animation: fadeUp 0.4s ease 0.20s both; }
-        .anim-4 { animation: fadeUp 0.4s ease 0.28s both; }
-      `}</style>
-
-      {/* ── Page header ── */}
-      <div className="anim-1 flex items-center justify-between mb-8">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-zinc-900 tracking-tight">Dashboard</h1>
-          <p className="text-zinc-400 text-sm mt-1 font-light">Good morning, Aarav 👋 — here's your job hunt overview.</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-zinc-400 bg-white border border-zinc-200 px-3 py-2 rounded-lg">
-          <span>📅</span> March 2025
-        </div>
-      </div>
-
-      {/* ── Stat cards ── */}
-      <div className="anim-2 grid grid-cols-5 gap-4 mb-8">
-        {STATS.map(s => (
-          <div key={s.label} className="bg-white border border-zinc-200 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-            <div className="flex items-start justify-between mb-3">
-              <span className="text-xs text-zinc-400 font-medium">{s.label}</span>
-              <div className={`w-7 h-7 rounded-lg ${s.iconBg} flex items-center justify-center ${s.iconColor} text-sm`}>{s.icon}</div>
-            </div>
-            <div className="font-display text-3xl font-bold text-zinc-900 leading-none mb-1">{s.value}</div>
-            <div className={`text-[11px] font-medium ${s.deltaPos ? "text-green-500" : "text-red-400"}`}>{s.delta}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Middle row: charts ── */}
-      <div className="anim-3 grid grid-cols-3 gap-5 mb-8">
-
-        {/* Monthly bar chart */}
-        <div className="col-span-1 bg-white border border-zinc-200 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold text-zinc-900 text-sm">Monthly Applications</h3>
-            <span className="text-[10px] text-zinc-400">Last 6 months</span>
-          </div>
-          <p className="text-[11px] text-zinc-400 font-light">6 applications this month</p>
-          <BarChart />
-        </div>
-
-        {/* Donut */}
-        <div className="col-span-1 bg-white border border-zinc-200 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold text-zinc-900 text-sm">Status Distribution</h3>
-            <span className="text-[10px] text-zinc-400">All time</span>
-          </div>
-          <p className="text-[11px] text-zinc-400 mb-4 font-light">Breakdown by application status</p>
-          <DonutChart />
-        </div>
-
-        {/* Activity feed */}
-        <div className="col-span-1 bg-white border border-zinc-200 rounded-2xl p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-zinc-900 text-sm">Recent Activity</h3>
-            <span className="text-[10px] text-zinc-400">Live</span>
-          </div>
-          <div className="space-y-4 flex-1 overflow-y-auto">
-            {ACTIVITY.map((a, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1 ${a.dot}`} />
-                  {i < ACTIVITY.length - 1 && <div className="w-px flex-1 bg-zinc-100 mt-1" />}
-                </div>
-                <div className="pb-3 flex-1">
-                  <p className={`text-[12px] font-medium leading-snug ${a.color}`}>{a.text}</p>
-                  <p className="text-[10px] text-zinc-400 mt-0.5">{a.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Applications table ── */}
-      <div className="anim-4 bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-        {/* Table header */}
-        <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
+    <div className="flex h-screen bg-zinc-50 overflow-hidden font-sans">
+      <Sidebar />
+      
+      <main className="flex-1 p-8 overflow-y-auto scroll-smooth">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
-            <h3 className="font-semibold text-zinc-900 text-sm">All Applications</h3>
-            <p className="text-[11px] text-zinc-400 mt-0.5">{filtered.length} of {apps.length} applications</p>
+            <h1 className="font-display font-bold text-3xl text-zinc-900 tracking-tight leading-tight">
+              Welcome back, {user?.name || "Aarav"}
+            </h1>
+            <p className="text-zinc-400 font-light text-sm mt-2 flex items-center gap-2">
+              <Clock size={16} className="text-zinc-300" />
+              {formattedDate}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Filter pills */}
-            <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-1">
-              {filters.map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`text-[11px] font-medium px-3 py-1.5 rounded-md transition-all
-                    ${filter === f ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-900 hover:bg-white"}`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-            <Link to="/applications/new"
-              className="text-xs bg-zinc-900 text-white px-3 py-2 rounded-lg hover:bg-zinc-700 transition-all no-underline font-medium">
-              + Add
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/profile"
+              className="group bg-zinc-900 text-white rounded-2xl py-3 px-6 font-semibold text-sm hover:bg-zinc-800 transition-all shadow-lg flex items-center gap-3"
+            >
+               View Profile
+               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-zinc-50 border-b border-zinc-100">
-                {["Company","Role","Applied","Status","Source","Last Update","Actions"].map(h => (
-                  <th key={h} className="text-left text-[11px] font-semibold text-zinc-400 uppercase tracking-wider px-6 py-3">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((app, i) => (
-                <tr key={app.id}
-                  className={`border-b border-zinc-50 hover:bg-zinc-50 transition-colors ${i === filtered.length - 1 ? "border-0" : ""}`}>
-                  {/* Company */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
-                        {app.company[0]}
-                      </div>
-                      <span className="text-sm font-semibold text-zinc-900">{app.company}</span>
-                    </div>
-                  </td>
-                  {/* Role */}
-                  <td className="px-6 py-4 text-sm text-zinc-500 font-light">{app.role}</td>
-                  {/* Date */}
-                  <td className="px-6 py-4 text-sm text-zinc-400">{app.date}</td>
-                  {/* Status */}
-                  <td className="px-6 py-4">
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_META[app.status]?.cls}`}>
-                      {app.status}
-                    </span>
-                  </td>
-                  {/* Source */}
-                  <td className="px-6 py-4">
-                    <span className={`text-[11px] font-medium px-2 py-1 rounded-md ${SOURCE_META[app.source]}`}>
-                      {app.source}
-                    </span>
-                  </td>
-                  {/* Last update */}
-                  <td className="px-6 py-4 text-xs text-zinc-400">{app.lastUpdate}</td>
-                  {/* Actions */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-all text-sm" title="View">
-                        👁
-                      </button>
-                      <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-blue-600 transition-all text-sm" title="Edit">
-                        ✏
-                      </button>
-                      <button
-                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-500 transition-all text-sm"
-                        title="Delete"
-                        onClick={() => setDeleteId(app.id)}
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-16 text-zinc-400">
-              <div className="text-4xl mb-3">◈</div>
-              <p className="text-sm font-medium text-zinc-500">No applications found</p>
-              <p className="text-xs mt-1">Try a different filter or add a new application</p>
+        {/* Top Summary Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+          {applicationSummary.map((stat, i) => (
+            <div key={i} className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group">
+              <div className="flex items-center gap-5">
+                <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                  <stat.icon size={24} />
+                </div>
+                <div>
+                  <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest leading-none mb-2">{stat.label}</p>
+                  <p className="text-3xl font-bold text-zinc-900 leading-none tabular-nums">{stat.value}</p>
+                </div>
+              </div>
             </div>
-          )}
+          ))}
         </div>
-      </div>
 
-      {/* ── Delete confirmation modal ── */}
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-7 max-w-sm w-full shadow-2xl border border-zinc-200">
-            <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mb-4 text-red-500 text-lg">🗑</div>
-            <h3 className="font-display font-bold text-lg text-zinc-900 mb-1 tracking-tight">Delete application?</h3>
-            <p className="text-zinc-400 text-sm font-light mb-6">This action cannot be undone. The application will be permanently removed.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="flex-1 text-sm border border-zinc-200 text-zinc-700 py-2.5 rounded-xl hover:border-zinc-400 transition-all font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteId)}
-                className="flex-1 text-sm bg-red-500 text-white py-2.5 rounded-xl hover:bg-red-600 transition-all font-medium shadow-sm"
-              >
-                Delete
-              </button>
+        {/* Coding Profiles & Pie Charts */}
+        <div className="mb-12">
+          <div className="flex items-center gap-2 mb-8 px-1">
+            <h2 className="font-display font-bold text-2xl text-zinc-900 tracking-tight">Coding Insights</h2>
+            <div className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-100 flex items-center gap-1.5 ml-2">
+              <TrendingUp size={12} /> Live Data
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* LeetCode Donut Card */}
+            <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center gap-8">
+              <CodingDonutChart 
+                easy={codingStats.leetcode.easy} 
+                medium={codingStats.leetcode.medium} 
+                hard={codingStats.leetcode.hard} 
+                total={codingStats.leetcode.solved} 
+              />
+              <div className="flex-1 w-full">
+                <h3 className="font-display font-bold text-xl text-zinc-900 mb-4 flex items-center gap-2">
+                  <Code size={18} className="text-zinc-400"/> LeetCode
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-emerald-500 uppercase tracking-widest">Easy</span>
+                    <span className="text-zinc-900 tabular-nums">{codingStats.leetcode.easy}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-amber-500 uppercase tracking-widest">Medium</span>
+                    <span className="text-zinc-900 tabular-nums">{codingStats.leetcode.medium}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-rose-500 uppercase tracking-widest">Hard</span>
+                    <span className="text-zinc-900 tabular-nums">{codingStats.leetcode.hard}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Codeforces Donut Card */}
+            <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center gap-8">
+              <CodingDonutChart 
+                easy={codingStats.codeforces.easy} 
+                medium={codingStats.codeforces.medium} 
+                hard={codingStats.codeforces.hard} 
+                total={codingStats.codeforces.solved} 
+              />
+              <div className="flex-1 w-full">
+                <h3 className="font-display font-bold text-xl text-zinc-900 mb-2 flex items-center gap-2">
+                  <Activity size={18} className="text-zinc-400"/> Codeforces
+                </h3>
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-4">{codingStats.codeforces.rank}</p>
+                <div className="flex items-center justify-between border-t border-zinc-100 pt-4 mt-2">
+                  <span className="text-sm font-bold text-zinc-400">Rating</span>
+                  <span className="text-2xl font-bold text-blue-600 tabular-nums">{codingStats.codeforces.rating}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* GitHub Card (Muted Dark Style) */}
+            <div className="bg-zinc-900 text-white rounded-[2rem] p-8 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden group">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-10">
+                  <GitHubIcon size={28} className="text-zinc-400" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 bg-zinc-800/50 px-3 py-1 rounded-full border border-zinc-700">Analytics</span>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <span className="text-5xl font-bold tracking-tight block tabular-nums">{codingStats.github.contributions}</span>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1 block">Yearly Contributions</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-8 pt-4 border-t border-zinc-800">
+                    <div>
+                      <span className="text-2xl font-bold block tabular-nums">{codingStats.github.repos}</span>
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Repositories</span>
+                    </div>
+                    <div>
+                      <span className="text-2xl font-bold block tabular-nums">{codingStats.github.stars}</span>
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Total Stars</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 pointer-events-none">
+                <GitHubIcon size={200} />
+              </div>
             </div>
           </div>
         </div>
-      )}
-    </Sidebar>
+
+        {/* Heatmap Section */}
+        <div className="bg-white border border-zinc-200 rounded-[2rem] mb-12 shadow-sm overflow-hidden">
+          <div className="p-8 border-b border-zinc-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h2 className="font-display font-bold text-2xl text-zinc-900 tracking-tight leading-none mb-3">Activity Heatmap</h2>
+              <p className="text-zinc-400 text-sm font-light italic">Detailed coding activity over the last year</p>
+            </div>
+            <div className="flex items-center gap-4 bg-zinc-50 p-3 rounded-2xl border border-zinc-100">
+               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Intensity</span>
+               <div className="flex gap-2 pr-1">
+                 {[0,1,2,3].map(v => <div key={v} className={`w-4 h-4 rounded-md ${v===0 ? 'bg-zinc-100' : v===1 ? 'bg-blue-100' : v===2 ? 'bg-blue-300' : 'bg-blue-600'}`}></div>)}
+               </div>
+            </div>
+          </div>
+          {/* Heatmap wrapper to suppress internal styles from Heatmap.jsx if possible */}
+          <div className="p-8 bg-zinc-50/20 overflow-x-auto">
+             <div className="min-w-[800px]">
+                <Heatmap />
+             </div>
+          </div>
+        </div>
+
+        {/* Practice Sheets & Events Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Curated Sheets */}
+          <div className="space-y-8">
+            <h2 className="font-display font-bold text-2xl text-zinc-900 tracking-tight flex items-center gap-3 px-1">
+              Curated Sheets <Award size={24} className="text-zinc-300" />
+            </h2>
+            <div className="space-y-4">
+              {SHEETS.map((sheet, i) => (
+                <div key={i} className="bg-white border border-zinc-200 rounded-[1.5rem] p-6 hover:border-zinc-400 hover:shadow-xl transition-all group flex items-center justify-between shadow-sm border-l-4 border-l-transparent hover:border-l-zinc-900">
+                  <div>
+                    <h3 className="font-bold text-zinc-900 text-lg mb-1 group-hover:text-blue-600 transition-colors">{sheet.name}</h3>
+                    <p className="text-zinc-400 text-sm font-light">{sheet.desc}</p>
+                  </div>
+                  <a href={sheet.link} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-900 group-hover:text-white transition-all shadow-sm border border-zinc-100">
+                    <ExternalLink size={20} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Upcoming Milestones */}
+          <div className="space-y-8">
+            <h2 className="font-display font-bold text-2xl text-zinc-900 tracking-tight flex items-center gap-3 px-1">
+              Upcoming Milestones <AlertCircle size={24} className="text-zinc-300" />
+            </h2>
+            <div className="space-y-4">
+              {EVENTS.map((event, i) => (
+                <div key={i} className="bg-white border border-zinc-200 rounded-[1.5rem] p-6 hover:border-zinc-400 hover:shadow-xl transition-all group flex items-center justify-between shadow-sm border-l-4 border-l-transparent hover:border-l-blue-600">
+                  <div className="flex items-center gap-5">
+                    <div className="text-center w-14 py-3 bg-zinc-50 rounded-2xl border border-zinc-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                       <span className="text-[10px] font-black text-zinc-400 group-hover:text-blue-400 uppercase block leading-none mb-1">{new Date(event.date).toLocaleString('en-US', { month: 'short' })}</span>
+                       <span className="text-xl font-bold text-zinc-900 group-hover:text-blue-600 leading-none">{new Date(event.date).getDate()}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-zinc-900 text-lg mb-1 group-hover:text-blue-600 transition-colors">{event.name}</h3>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest bg-zinc-100 px-2 py-0.5 rounded">{event.type}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-200"></span>
+                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{new Date(event.date).getFullYear()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <a href={event.link} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-900 group-hover:text-white transition-all shadow-sm border border-zinc-100">
+                    <ExternalLink size={20} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="h-20"></div>
+      </main>
+    </div>
   );
 }

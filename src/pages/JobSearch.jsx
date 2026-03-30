@@ -20,19 +20,20 @@ const STATUS_COLORS = {
 
 const SOURCE_META = {
   Internshala: "bg-violet-100 text-violet-700",
+  RemoteOK:    "bg-emerald-100 text-emerald-700",
   LinkedIn:    "bg-blue-100 text-blue-700",
-  Indeed:      "bg-indigo-100 text-indigo-600",
 };
 
 export default function JobSearch() {
-  const [query, setQuery] = useState("");
+  const [query, setQuery]       = useState("");
   const [location, setLocation] = useState("bangalore");
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [source, setSource]     = useState("all");       // ← NEW
+  const [jobs, setJobs]         = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
   const [searched, setSearched] = useState(false);
   const [filterExp, setFilterExp] = useState("All");
-  const [sortBy, setSortBy] = useState("default");
+  const [sortBy, setSortBy]     = useState("default");
   const [savedJobs, setSavedJobs] = useState([]);
   const [activeTab, setActiveTab] = useState("search");
 
@@ -45,14 +46,14 @@ export default function JobSearch() {
   };
   const isSaved = (job) => savedJobs.some((j) => j.id === job.id);
 
-  const handleSearch = async (q = query, loc = location) => {
+  const handleSearch = async (q = query, loc = location, src = source) => {
     if (!q.trim()) return;
     setLoading(true);
     setError("");
     setSearched(true);
     try {
       const res = await fetch(
-        `${API_BASE}/scrape/?query=${encodeURIComponent(q)}&location=${encodeURIComponent(loc)}`
+        `${API_BASE}/scrape/?query=${encodeURIComponent(q)}&location=${encodeURIComponent(loc)}&source=${src}`
       );
       const data = await res.json();
       if (data.success) {
@@ -115,7 +116,7 @@ export default function JobSearch() {
             Job Search
           </h1>
           <p className="text-zinc-400 text-sm mt-1 font-light">
-            Real-time jobs scraped from Internshala — find your next opportunity.
+            Real-time jobs scraped from Internshala & RemoteOK
           </p>
         </div>
 
@@ -149,10 +150,11 @@ export default function JobSearch() {
         </div>
       </div>
 
-      {/* ── Search Box (only on search tab) ── */}
+      {/* ── Search Box ── */}
       {activeTab === "search" && (
         <div className="anim-2 bg-white border border-zinc-200 rounded-2xl p-6 mb-6">
           <div className="flex gap-3 mb-4">
+
             {/* Query */}
             <div className="flex-1 flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 focus-within:border-zinc-400 transition-colors">
               <span className="text-zinc-400 text-sm">💼</span>
@@ -167,7 +169,7 @@ export default function JobSearch() {
             </div>
 
             {/* Location */}
-            <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 focus-within:border-zinc-400 transition-colors min-w-40">
+            <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 min-w-36">
               <span className="text-zinc-400 text-sm">📍</span>
               <select
                 value={location}
@@ -179,6 +181,20 @@ export default function JobSearch() {
                     {loc.charAt(0).toUpperCase() + loc.slice(1)}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Source selector ← NEW */}
+            <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 min-w-36">
+              <span className="text-zinc-400 text-sm">🌐</span>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="bg-transparent outline-none text-zinc-700 text-sm font-medium cursor-pointer"
+              >
+                <option value="all">All Sources</option>
+                <option value="internshala">Internshala</option>
+                <option value="remoteok">RemoteOK</option>
               </select>
             </div>
 
@@ -200,10 +216,7 @@ export default function JobSearch() {
             {POPULAR_SEARCHES.map((tag) => (
               <button
                 key={tag}
-                onClick={() => {
-                  setQuery(tag);
-                  handleSearch(tag, location);
-                }}
+                onClick={() => { setQuery(tag); handleSearch(tag, location, source); }}
                 className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-600 border border-zinc-200 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all"
               >
                 {tag}
@@ -224,14 +237,13 @@ export default function JobSearch() {
             </span>
             {searched && activeTab === "search" && (
               <span className="bg-zinc-100 text-zinc-600 border border-zinc-200 text-[11px] font-semibold px-2.5 py-1 rounded-full">
-                "{query}" · {location}
+                "{query}" · {location} · {source}
               </span>
             )}
           </div>
 
           {activeTab === "search" && (
             <div className="flex items-center gap-3">
-              {/* Experience filter pills */}
               <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-1">
                 {["All", "Fresher", "Experienced"].map((f) => (
                   <button
@@ -248,7 +260,6 @@ export default function JobSearch() {
                 ))}
               </div>
 
-              {/* Sort */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -266,10 +277,7 @@ export default function JobSearch() {
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl p-6 border border-zinc-100"
-            >
+            <div key={i} className="bg-white rounded-2xl p-6 border border-zinc-100">
               <div className="shimmer-card h-3 w-3/4 rounded-full mb-3" />
               <div className="shimmer-card h-2.5 w-1/2 rounded-full mb-6" />
               <div className="shimmer-card h-2.5 w-full rounded-full mb-2" />
@@ -289,7 +297,7 @@ export default function JobSearch() {
         </div>
       )}
 
-      {/* ── Empty / Initial states ── */}
+      {/* ── Empty states ── */}
       {!loading && !error && searched && displayJobs.length === 0 && (
         <div className="bg-white border border-zinc-200 rounded-2xl p-16 text-center">
           <div className="text-4xl mb-3">◈</div>
@@ -312,7 +320,9 @@ export default function JobSearch() {
           <p className="text-sm font-semibold text-zinc-700 mb-1">
             Search for jobs above to get started
           </p>
-          <p className="text-xs text-zinc-400">Real-time data scraped from Internshala</p>
+          <p className="text-xs text-zinc-400">
+            Real-time data from Internshala & RemoteOK
+          </p>
         </div>
       )}
 
@@ -320,15 +330,10 @@ export default function JobSearch() {
       {!loading && displayJobs.length > 0 && (
         <div className="anim-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {displayJobs.map((job) => {
-            const isFresher = job.experience
-              ?.toLowerCase()
-              .includes("no experience");
-            const expLabel = isFresher ? "Fresher" : job.experience;
-            const expCls = isFresher
-              ? STATUS_COLORS.fresher
-              : STATUS_COLORS.experienced;
-            const sourceCls =
-              SOURCE_META[job.source] ?? "bg-zinc-100 text-zinc-600";
+            const isFresher = job.experience?.toLowerCase().includes("no experience");
+            const expLabel  = isFresher ? "Fresher" : job.experience;
+            const expCls    = isFresher ? STATUS_COLORS.fresher : STATUS_COLORS.experienced;
+            const sourceCls = SOURCE_META[job.source] ?? "bg-zinc-100 text-zinc-600";
 
             return (
               <div
@@ -366,15 +371,10 @@ export default function JobSearch() {
                     <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
                       📍 {job.location?.split(",")?.[0]?.trim()}
                     </span>
-                    <span
-                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${expCls}`}
-                    >
-                      {isFresher ? "✓ " : ""}
-                      {expLabel}
+                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${expCls}`}>
+                      {isFresher ? "✓ " : ""}{expLabel}
                     </span>
-                    <span
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${sourceCls}`}
-                    >
+                    <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${sourceCls}`}>
                       {job.source}
                     </span>
                   </div>
@@ -389,7 +389,7 @@ export default function JobSearch() {
                     </p>
                   </div>
 
-                  {/* Apply button */}
+                  {/* Apply */}
                   <a
                     href={job.job_url}
                     target="_blank"
@@ -399,7 +399,6 @@ export default function JobSearch() {
                     Apply Now →
                   </a>
 
-                  {/* Scraped time */}
                   <p className="text-center text-zinc-300 text-[10px] mt-3">
                     Scraped {new Date(job.scraped_at).toLocaleDateString()}
                   </p>

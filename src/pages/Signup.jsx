@@ -47,7 +47,8 @@ export default function SignupPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [showCfm, setShowCfm] = useState(false);
   const {user}=useAuth();
-  if(user) navigate("/dashboard");
+
+ 
   const googleLogin = async (response) => {
 
   if (!response?.credential) {

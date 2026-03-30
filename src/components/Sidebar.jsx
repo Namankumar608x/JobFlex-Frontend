@@ -1,11 +1,25 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { 
+  LayoutDashboard, 
+  Search, 
+  Mail, 
+  User, 
+  BarChart3, 
+  Bell, 
+  LogOut,
+  Briefcase,
+  FileText
+} from 'lucide-react';
 import { useAuth } from "../context/authContext";
+
 const NAV_ITEMS = [
-  { path: "/dashboard",       icon: "⊞", label: "Dashboard"    },
-  { path: "/job-search",    icon: "◈", label: "New Postings" },
-  { path: "/analytics",       icon: "◑", label: "Analytics"    },
-  { path: "/email-logs",      icon: "✉", label: "Email Logs"   },
-  { path: "/settings",        icon: "◻", label: "Settings"     },
+  { path: "/dashboard",       icon: <LayoutDashboard size={16}/>, label: "Dashboard"    },
+  { path: "/applications", icon: <Briefcase size={16} />, label: "Applications" },
+  { path: "/job-search",    icon: <Search size={16}/>, label: "New Postings" },
+  { path: "/analytics",       icon: <BarChart3 size={16} />, label: "Analytics"    },
+  { path: "/email-logs",      icon: <Mail size={16} />, label: "Email Logs"   },
+  { path: "/notifications", icon: <Bell size={16} />, label: "Notifications" },
+  { path: "/resume", icon: <FileText size={16} />, label: "ATS Checker" }
 ];
 
 export default function Sidebar({ children }) {
@@ -46,9 +60,9 @@ export default function Sidebar({ children }) {
               >
                 <span className={`text-base ${active ? "text-white" : "text-zinc-400"}`}>{icon}</span>
                 {label}
-                {label === "Email Logs" && (
+                {/*label === "Email Logs" && (
                   <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${active ? "bg-white/20 text-white" : "bg-amber-100 text-amber-600"}`}>3</span>
-                )}
+                )*/}
               </Link>
             );
           })}
@@ -67,24 +81,25 @@ export default function Sidebar({ children }) {
         {/* User */}
         <div className="border-t border-zinc-100 px-3 py-4">
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 cursor-pointer transition-all group">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user.uname.split("")[0]}</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-zinc-900 truncate">{user.uname}</div>
-              <div className="text-[11px] text-zinc-400 truncate">{user.email}</div>
-            </div>
-            <button
-              onClick={() => navigate("/login")}
-              className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all text-xs"
-              title="Log out"
-            >⏏</button>
+        {/* <button onClick={()=>navigate("/profile")}>*/}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user?.uname || "T"}</div>
+            <button onClick={()=>navigate("/profile")} className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-zinc-900 truncate">{user?.uname || "Tarun"}</div>
+              <div className="text-[11px] text-zinc-400 truncate">{user?.email || "tarundeepakjain@gmail.com"}</div>
+            </button>
+         {/*</button>*/}
+            <LogOut 
+            onClick={() => navigate("/login")}
+            size={16}
+            title="Log out"
+            />
           </div>
         </div>
       </aside>
 
       {/* ── Main content area ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
-
-        {/* Top bar */}
+      {/*
         <header className="h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-8 flex-shrink-0">
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">⌕</span>
@@ -96,21 +111,18 @@ export default function Sidebar({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Notification bell */}
             <button className="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-zinc-50 border border-zinc-200 transition-all text-zinc-500 hover:text-zinc-900">
               🔔
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-2 border-white" />
             </button>
 
-            {/* Add application CTA */}
             <Link to="/applications/new"
               className="flex items-center gap-2 bg-zinc-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-zinc-700 transition-all shadow-sm no-underline">
               + Add Application
             </Link>
           </div>
         </header>
-
-        {/* Page content */}
+        */}
         <main className="flex-1 overflow-y-auto bg-zinc-50 p-8">
           {children}
         </main>

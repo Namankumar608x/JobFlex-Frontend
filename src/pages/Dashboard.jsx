@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { 
-  Calendar, 
-  Code, 
-  ExternalLink, 
-  Briefcase, 
-  Target, 
-  Award, 
-  Activity, 
+import {
+  Calendar,
+  Code,
+  ExternalLink,
+  Briefcase,
+  Target,
+  Award,
+  Activity,
   Clock,
   CheckCircle2,
   AlertCircle,
@@ -20,7 +20,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
-import Heatmap from "../components/Heatmap"; 
+import Heatmap from "../components/Heatmap";
 import { useAuth } from "../context/authContext";
 
 // ── Custom Icons ─────────────────────────────────────────────────────────────
@@ -31,38 +31,6 @@ const GitHubIcon = ({ size = 20, className = "" }) => (
     <path d="M9 18c-4.51 2-5-2-7-2" />
   </svg>
 );
-
-// ── Reusable Donut Chart Component ───────────────────────────────────────────
-
-const CodingDonutChart = ({ easy, medium, hard, total }) => {
-  const size = 100;
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  
-  const totalVal = (easy + medium + hard) || 1;
-  const easyPct = (easy / totalVal) * circumference;
-  const mediumPct = (medium / totalVal) * circumference;
-  const hardPct = (hard / totalVal) * circumference;
-
-  return (
-    <div className="relative flex items-center justify-center w-32 h-32">
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size/2} cy={size/2} r={radius} stroke="#f4f4f5" strokeWidth={strokeWidth} fill="transparent" />
-        <circle cx={size/2} cy={size/2} r={radius} stroke="#10b981" strokeWidth={strokeWidth} fill="transparent" 
-          strokeDasharray={`${easyPct} ${circumference}`} />
-        <circle cx={size/2} cy={size/2} r={radius} stroke="#f59e0b" strokeWidth={strokeWidth} fill="transparent" 
-          strokeDasharray={`${mediumPct} ${circumference}`} strokeDashoffset={-easyPct} />
-        <circle cx={size/2} cy={size/2} r={radius} stroke="#f43f5e" strokeWidth={strokeWidth} fill="transparent" 
-          strokeDasharray={`${hardPct} ${circumference}`} strokeDashoffset={-(easyPct + mediumPct)} />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold text-zinc-900 leading-none tabular-nums">{total}</span>
-        <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter mt-1">Solved</span>
-      </div>
-    </div>
-  );
-};
 
 // ── Static Content ───────────────────────────────────────────────────────────
 
@@ -84,21 +52,19 @@ const EVENTS = [
 export default function Dashboard() {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
-  
-  // Simulated Live Stats State
-  const [codingStats, setCodingStats] = useState({
-    leetcode: { solved: 452, easy: 120, medium: 280, hard: 52, rank: "Top 5%" },
-    codeforces: { rating: 1542, solved: 210, easy: 40, medium: 120, hard: 50, rank: "Specialist" },
-    github: { contributions: 842, repos: 34, stars: 12 }
+
+  const [githubStats, setGithubStats] = useState({
+    contributions: 842,
+    repos: 34,
+    stars: 12
   });
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     const statsLoop = setInterval(() => {
-      setCodingStats(prev => ({
+      setGithubStats(prev => ({
         ...prev,
-        leetcode: { ...prev.leetcode, solved: prev.leetcode.solved + (Math.random() > 0.95 ? 1 : 0) },
-        github: { ...prev.github, contributions: prev.github.contributions + (Math.random() > 0.8 ? 1 : 0) }
+        contributions: prev.contributions + (Math.random() > 0.8 ? 1 : 0)
       }));
     }, 5000);
     return () => { clearInterval(timer); clearInterval(statsLoop); };
@@ -121,7 +87,7 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen bg-zinc-50 overflow-hidden font-sans">
       <Sidebar />
-      
+
       <main className="flex-1 p-8 overflow-y-auto scroll-smooth">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
@@ -135,12 +101,12 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Link 
+            <Link
               to="/profile"
               className="group bg-zinc-900 text-white rounded-2xl py-3 px-6 font-semibold text-sm hover:bg-zinc-800 transition-all shadow-lg flex items-center gap-3"
             >
-               View Profile
-               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              View Profile
+              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </div>
@@ -162,7 +128,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Coding Profiles & Pie Charts */}
+        {/* Coding Insights Section */}
         <div className="mb-12">
           <div className="flex items-center gap-2 mb-8 px-1">
             <h2 className="font-display font-bold text-2xl text-zinc-900 tracking-tight">Coding Insights</h2>
@@ -170,107 +136,31 @@ export default function Dashboard() {
               <TrendingUp size={12} /> Live Data
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* LeetCode Donut Card */}
-            <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center gap-8">
-              <CodingDonutChart 
-                easy={codingStats.leetcode.easy} 
-                medium={codingStats.leetcode.medium} 
-                hard={codingStats.leetcode.hard} 
-                total={codingStats.leetcode.solved} 
-              />
-              <div className="flex-1 w-full">
-                <h3 className="font-display font-bold text-xl text-zinc-900 mb-4 flex items-center gap-2">
-                  <Code size={18} className="text-zinc-400"/> LeetCode
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-emerald-500 uppercase tracking-widest">Easy</span>
-                    <span className="text-zinc-900 tabular-nums">{codingStats.leetcode.easy}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-amber-500 uppercase tracking-widest">Medium</span>
-                    <span className="text-zinc-900 tabular-nums">{codingStats.leetcode.medium}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-rose-500 uppercase tracking-widest">Hard</span>
-                    <span className="text-zinc-900 tabular-nums">{codingStats.leetcode.hard}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Codeforces Donut Card */}
-            <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center gap-8">
-              <CodingDonutChart 
-                easy={codingStats.codeforces.easy} 
-                medium={codingStats.codeforces.medium} 
-                hard={codingStats.codeforces.hard} 
-                total={codingStats.codeforces.solved} 
-              />
-              <div className="flex-1 w-full">
-                <h3 className="font-display font-bold text-xl text-zinc-900 mb-2 flex items-center gap-2">
-                  <Activity size={18} className="text-zinc-400"/> Codeforces
-                </h3>
-                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-4">{codingStats.codeforces.rank}</p>
-                <div className="flex items-center justify-between border-t border-zinc-100 pt-4 mt-2">
-                  <span className="text-sm font-bold text-zinc-400">Rating</span>
-                  <span className="text-2xl font-bold text-blue-600 tabular-nums">{codingStats.codeforces.rating}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* GitHub Card (Muted Dark Style) */}
-            <div className="bg-zinc-900 text-white rounded-[2rem] p-8 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden group">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-10">
-                  <GitHubIcon size={28} className="text-zinc-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 bg-zinc-800/50 px-3 py-1 rounded-full border border-zinc-700">Analytics</span>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <span className="text-5xl font-bold tracking-tight block tabular-nums">{codingStats.github.contributions}</span>
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1 block">Yearly Contributions</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-8 pt-4 border-t border-zinc-800">
-                    <div>
-                      <span className="text-2xl font-bold block tabular-nums">{codingStats.github.repos}</span>
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Repositories</span>
-                    </div>
-                    <div>
-                      <span className="text-2xl font-bold block tabular-nums">{codingStats.github.stars}</span>
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Total Stars</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 pointer-events-none">
-                <GitHubIcon size={200} />
-              </div>
-            </div>
-          </div>
+          {/* GitHub Card — standalone full width or right-aligned */}
+      
         </div>
 
-        {/* Heatmap Section */}
+        {/* Heatmap Section — now includes LC + CF donut cards + heatmap */}
         <div className="bg-white border border-zinc-200 rounded-[2rem] mb-12 shadow-sm overflow-hidden">
           <div className="p-8 border-b border-zinc-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h2 className="font-display font-bold text-2xl text-zinc-900 tracking-tight leading-none mb-3">Activity Heatmap</h2>
+           
               <p className="text-zinc-400 text-sm font-light italic">Detailed coding activity over the last year</p>
             </div>
             <div className="flex items-center gap-4 bg-zinc-50 p-3 rounded-2xl border border-zinc-100">
-               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Intensity</span>
-               <div className="flex gap-2 pr-1">
-                 {[0,1,2,3].map(v => <div key={v} className={`w-4 h-4 rounded-md ${v===0 ? 'bg-zinc-100' : v===1 ? 'bg-blue-100' : v===2 ? 'bg-blue-300' : 'bg-blue-600'}`}></div>)}
-               </div>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Intensity</span>
+              <div className="flex gap-2 pr-1">
+                {[0, 1, 2, 3].map(v => (
+                  <div key={v} className={`w-4 h-4 rounded-md ${v === 0 ? 'bg-zinc-100' : v === 1 ? 'bg-blue-100' : v === 2 ? 'bg-blue-300' : 'bg-blue-600'}`}></div>
+                ))}
+              </div>
             </div>
           </div>
-          {/* Heatmap wrapper to suppress internal styles from Heatmap.jsx if possible */}
           <div className="p-8 bg-zinc-50/20 overflow-x-auto">
-             <div className="min-w-[800px]">
-                <Heatmap />
-             </div>
+            <div className="min-w-[800px]">
+              <Heatmap />
+            </div>
           </div>
         </div>
 
@@ -306,8 +196,8 @@ export default function Dashboard() {
                 <div key={i} className="bg-white border border-zinc-200 rounded-[1.5rem] p-6 hover:border-zinc-400 hover:shadow-xl transition-all group flex items-center justify-between shadow-sm border-l-4 border-l-transparent hover:border-l-blue-600">
                   <div className="flex items-center gap-5">
                     <div className="text-center w-14 py-3 bg-zinc-50 rounded-2xl border border-zinc-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
-                       <span className="text-[10px] font-black text-zinc-400 group-hover:text-blue-400 uppercase block leading-none mb-1">{new Date(event.date).toLocaleString('en-US', { month: 'short' })}</span>
-                       <span className="text-xl font-bold text-zinc-900 group-hover:text-blue-600 leading-none">{new Date(event.date).getDate()}</span>
+                      <span className="text-[10px] font-black text-zinc-400 group-hover:text-blue-400 uppercase block leading-none mb-1">{new Date(event.date).toLocaleString('en-US', { month: 'short' })}</span>
+                      <span className="text-xl font-bold text-zinc-900 group-hover:text-blue-600 leading-none">{new Date(event.date).getDate()}</span>
                     </div>
                     <div>
                       <h3 className="font-bold text-zinc-900 text-lg mb-1 group-hover:text-blue-600 transition-colors">{event.name}</h3>
@@ -326,7 +216,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        
+
         <div className="h-20"></div>
       </main>
     </div>

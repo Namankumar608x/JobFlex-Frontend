@@ -68,9 +68,9 @@ function MockDashboard() {
 }
 
 export default function HomePage() {
-    const {user}=useAuth();
+  const {user}=useAuth();
+//  console.log(user);
     const navigate=useNavigate();
-    console.log(user);
 
   return (
     <div className="min-h-screen bg-zinc-50">

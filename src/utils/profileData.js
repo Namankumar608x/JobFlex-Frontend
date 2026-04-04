@@ -38,7 +38,14 @@ const transformCFData = (submissions) => {
     count: map[date],
   }));
 };
-
+const transformCFHeatmap = (cfMap) => {
+   if (!cfMap) return [];
+  return Object.entries(cfMap).map(([date, count]) => ({
+    date,
+    count
+  }));
+  
+};
 // 🔹 Merge LC + CF
 const mergeHeatmaps = (lc, cf) => {
   const map = new Map();
@@ -69,7 +76,9 @@ const mergeHeatmaps = (lc, cf) => {
     }
   });
 
-  return Array.from(map.values());
+  return Array.from(map.values()).sort(
+  (a, b) => new Date(a.date) - new Date(b.date)
+);
 };
 
 export const fetchData = async (LCusername = "", CFusername = "") => {
@@ -89,11 +98,14 @@ export const fetchData = async (LCusername = "", CFusername = "") => {
   
     const cfRes = await api("get", `user/codeforces/${CFusername}`);
 
-    const CFheatmap = transformCFData(cfRes.data.submissions);
+     const CFheatmap = transformCFHeatmap(
+  cfRes?.data?.heatmap || {}
+);
 
     const codeforcesStats = {
       total: cfRes.data.totalSolved,
-      submissions: cfRes.data.submissions.length,
+      submissions: cfRes.data.totalSubmissions,
+      rating:cfRes.data.user.rating
     };
 
     const mergedHeatmap = mergeHeatmaps(LCheatmap, CFheatmap);
@@ -112,7 +124,7 @@ export const fetchData = async (LCusername = "", CFusername = "") => {
 
   } catch (error) {
     console.error(error);
-    return null;
+   
   }
 
 

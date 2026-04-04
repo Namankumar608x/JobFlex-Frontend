@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState,useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -14,7 +14,9 @@ import ProtectedRoute from './protectedRoute';
 import ScanEmailsPage from './pages/ScanEmails';
 import Applications from './pages/Applications';
 import Heatmap from './components/Heatmap';
+import Loader from './components/Loader';
 export default function App() {
+ 
   return (
    <BrowserRouter>
    <AuthProvider>

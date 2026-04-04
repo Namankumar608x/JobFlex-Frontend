@@ -9,25 +9,30 @@ const client = axios.create({
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
-
     const originalRequest = error.config;
-    
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url.includes("/user/login") &&
-      !originalRequest.url.includes("/user/register") &&
-      !originalRequest.url.includes("/user/refresh")
-    ) {
+
+    // 🚨 STOP if refresh itself fails
+    if (originalRequest.url.includes("user/refresh")) {
+      return Promise.reject(error);
+    }
+if (
+  error.response?.status === 401 &&
+  !originalRequest._retry &&
+  !originalRequest.url.includes("user/refresh")
+)
+{
       originalRequest._retry = true;
 
-      await client.post(
-        `user/refresh/`,
-        {},
-        { withCredentials: true }
-      );
+      try {
+        await client.post("user/refresh/");
 
-      return client(originalRequest);
+        return client(originalRequest);
+      } catch (err) {
+        console.log("Refresh failed ❌");
+
+      
+        return Promise.reject(err);
+      }
     }
 
     return Promise.reject(error);

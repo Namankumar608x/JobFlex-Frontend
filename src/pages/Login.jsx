@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
   const [showPwd, setShowPwd] = useState(false);
-const {user}=useAuth();
 
   const update = (k) => (e) => { setError(""); setForm(p => ({ ...p, [k]: e.target.value })); };
 
@@ -63,7 +62,7 @@ navigate("/dashboard");
       if(res.status===200 || res.status===201){
         console.log(res.data);
         alert("Login successfull");
-    navigate("/dashboard");
+    navigate("/");
       }
     } catch (error) {
       console.error("Login error:",error);

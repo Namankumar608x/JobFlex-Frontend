@@ -128,8 +128,7 @@ function setJobFound(icon, label, data) {
   label.textContent = 'Job page detected!';
   label.style.color = 'var(--success)';
 
-  // Populate card
-  document.getElementById('job-title').textContent = data.jobTitle || 'Unknown Role';
+  document.getElementById('job-title').textContent = data.jobrole || 'Unknown Role';
   document.getElementById('job-company').textContent = data.company || 'Unknown Company';
   document.getElementById('job-location').textContent = data.location || 'Location N/A';
   document.getElementById('job-platform').textContent = data.platform || 'Web';
@@ -143,9 +142,7 @@ function setJobFound(icon, label, data) {
   }
 
   const formBadge = document.getElementById('job-form-indicator');
-  if (data.hasApplicationForm) {
-    formBadge.classList.remove('hidden');
-  }
+  if (data.hasApplicationForm) formBadge.classList.remove('hidden');
 
   document.getElementById('job-card').classList.remove('hidden');
 }
@@ -317,16 +314,16 @@ function renderApplications(apps) {
   }
 
   list.innerHTML = apps.map(app => `
-    <div class="app-item" data-id="${app.id}">
+    <div class="app-item" data-id="${app.id || app.APP_ID}">
       <div class="app-item-header">
-        <div class="app-item-title">${escHtml(app.jobTitle || 'Unknown Role')}</div>
+        <div class="app-item-title">${escHtml(app.jobrole || 'Unknown Role')}</div>
         <div class="app-item-status status-${app.status}">${app.status}</div>
       </div>
       <div class="app-item-meta">
         <span>${escHtml(app.company || '—')}</span>
         ${app.location ? `<span>·</span><span>${escHtml(app.location)}</span>` : ''}
       </div>
-      <div class="app-item-date">${formatDate(app.createdAt)}</div>
+      <div class="app-item-date">${formatDate(app.createdAt || app.changed_at)}</div>
     </div>
   `).join('');
 
@@ -337,18 +334,17 @@ function renderApplications(apps) {
 
 // ─── Edit Modal ───
 function openEditModal(id) {
-  const app = allApplications.find(a => a.id === id);
+  const app = allApplications.find(a => (a.id === id || String(a.APP_ID) === String(id)));
   if (!app) return;
 
   editingAppId = id;
   editSelectedStatus = app.status;
 
-  document.getElementById('e-title').value = app.jobTitle || '';
+  document.getElementById('e-title').value = app.jobrole || '';
   document.getElementById('e-company').value = app.company || '';
   document.getElementById('e-location').value = app.location || '';
   document.getElementById('e-notes').value = app.notes || '';
 
-  // Set status chips
   document.querySelectorAll('#edit-status-chips .chip').forEach(chip => {
     chip.classList.toggle('active', chip.dataset.status === app.status);
   });
@@ -364,7 +360,7 @@ function closeModal() {
 async function saveEdit() {
   if (!editingAppId) return;
   const data = {
-    jobTitle: document.getElementById('e-title').value.trim(),
+    jobrole: document.getElementById('e-title').value.trim(),
     company: document.getElementById('e-company').value.trim(),
     location: document.getElementById('e-location').value.trim(),
     notes: document.getElementById('e-notes').value.trim(),

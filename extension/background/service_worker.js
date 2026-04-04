@@ -1,9 +1,6 @@
-// JobFlex Background Service Worker
+const JOBFLEX_API = 'http://localhost:8000';
 
-const JOBFLEX_API = 'http://localhost:8000/api'; // Update to production URL
-
-// State
-let detectedJobs = new Set(); // Track already-detected URLs this session
+let detectedJobs = new Set();
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('JobFlex extension installed');
@@ -11,26 +8,83 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 function initStorage() {
-  chrome.storage.local.get(['applications', 'settings', 'user'], (result) => {
-    if (!result.applications) {
-      chrome.storage.local.set({ applications: [] });
-    }
+  chrome.storage.local.get(['settings'], (result) => {
     if (!result.settings) {
       chrome.storage.local.set({
         settings: {
           autoDetect: true,
           showNotifications: true,
           apiUrl: JOBFLEX_API,
-          syncWithBackend: false,
         }
       });
     }
   });
 }
 
-// Listen for messages from content scripts and popup
+// ─── Get stored auth token ───
+async function getToken() {
+  return new Promise(async (resolve) => {
+    chrome.storage.local.get('user', async (result) => {
+      const user = result.user;
+      if (!user?.access) return resolve(null);
+
+      // Check if token is expired
+      try {
+        const payload = JSON.parse(atob(user.access.split('.')[1]));
+        const expiresAt = payload.exp * 1000; // convert to ms
+        const now = Date.now();
+
+        console.log('Token expires at:', new Date(expiresAt).toISOString());
+        console.log('Current time:', new Date(now).toISOString());
+        console.log('Token expired?', now >= expiresAt);
+
+        if (now < expiresAt) {
+          // Token still valid
+          return resolve(user.access);
+        }
+
+        // Token expired — try to refresh
+        console.log('Token expired, attempting refresh...');
+        const apiUrl = await getApiUrl();
+        const response = await fetch(`${apiUrl}/user/refresh/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh: user.refresh }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Token refreshed successfully');
+          // Save new access token
+          const updatedUser = { ...user, access: data.access };
+          chrome.storage.local.set({ user: updatedUser });
+          return resolve(data.access);
+        } else {
+          // Refresh also expired — force logout
+          console.log('Refresh token also expired, logging out');
+          chrome.storage.local.remove('user');
+          return resolve(null);
+        }
+      } catch (e) {
+        console.error('Token check error:', e);
+        return resolve(user.access);
+      }
+    });
+  });
+}
+
+async function getApiUrl() {
+  return new Promise(resolve => {
+    chrome.storage.local.get('settings', (result) => {
+      resolve(result.settings?.apiUrl || JOBFLEX_API);
+    });
+  });
+}
+
+// ─── Message Router ───
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
+
     case 'JOB_PAGE_DETECTED':
       handleJobDetection(message.data, sender.tab);
       sendResponse({ received: true });
@@ -56,10 +110,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       getStats().then(stats => sendResponse(stats));
       return true;
 
-    case 'SYNC_WITH_BACKEND':
-      syncWithBackend().then(result => sendResponse(result));
-      return true;
-
     case 'GET_SETTINGS':
       chrome.storage.local.get('settings', (result) => sendResponse(result.settings));
       return true;
@@ -82,119 +132,194 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// ─── Job Detection ───
 async function handleJobDetection(jobData, tab) {
   const settings = await new Promise(resolve =>
     chrome.storage.local.get('settings', r => resolve(r.settings || {}))
   );
 
   if (!settings.autoDetect) return;
+  if (detectedJobs.has(jobData.link)) return;
+  detectedJobs.add(jobData.link);
 
-  // Avoid duplicate detections
-  if (detectedJobs.has(jobData.url)) return;
-  detectedJobs.add(jobData.url);
-
-  // Check if already saved
-  const apps = await getApplications();
-  const alreadySaved = apps.some(a => a.url === jobData.url);
-  if (alreadySaved) return;
-
-  // Update badge
   chrome.action.setBadgeText({ text: '!', tabId: tab.id });
   chrome.action.setBadgeBackgroundColor({ color: '#6366f1', tabId: tab.id });
 
-  // Show notification
   if (settings.showNotifications) {
     chrome.notifications.create({
       type: 'basic',
       iconUrl: '../icons/icon48.png',
       title: 'JobFlex: Job Detected!',
-      message: `${jobData.jobTitle || 'Job'} at ${jobData.company || 'Company'} — Click to save`,
+      message: `${jobData.jobrole || 'Job'} at ${jobData.company || 'Company'} — Click to save`,
       priority: 2,
     });
   }
 
-  // Store pending detection
-  chrome.storage.session.set({
-    [`pending_${tab.id}`]: jobData
-  });
+  chrome.storage.session.set({ [`pending_${tab.id}`]: jobData });
 }
 
+// ─── Save Application ───
 async function saveApplication(data) {
+  const token = await getToken();
+  const apiUrl = await getApiUrl();
+
+  // Always save to local storage first
+  const localResult = await saveToLocal(data);
+
+  // If logged in, also save to backend
+  if (token) {
+    try {
+      const payload = {
+        jobrole: data.jobrole || data.jobTitle || '',
+        company: data.company || '',
+        link: data.link || data.url || '',
+        status: data.status || 'Applied',
+        platform: data.platform || '',
+        location: data.location || '',
+        notes: data.notes || '',
+        id: data.id || null,
+      };
+
+      const response = await fetch(`${apiUrl}/api/applications/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const backendData = await response.json();
+        // Update local record with backend APP_ID
+        await updateLocalWithBackendId(localResult.application.id, backendData.application.APP_ID);
+        return { success: true, application: { ...localResult.application, APP_ID: backendData.application.APP_ID } };
+      }
+    } catch (e) {
+      console.warn('Backend save failed, kept locally:', e);
+    }
+  }
+
+  return localResult;
+}
+
+async function saveToLocal(data) {
   return new Promise((resolve) => {
-    chrome.storage.local.get('applications', async (result) => {
+    chrome.storage.local.get('applications', (result) => {
       const apps = result.applications || [];
       const newApp = {
         id: generateId(),
-        ...data,
+        jobrole: data.jobrole || data.jobTitle || '',
+        company: data.company || '',
+        link: data.link || data.url || '',
         status: data.status || 'Applied',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        platform: data.platform || '',
+        location: data.location || '',
         notes: data.notes || '',
-        emailLogs: [],
-        statusHistory: [
-          { status: data.status || 'Applied', date: new Date().toISOString() }
-        ],
+        jobNumber: data.id || null,
+        createdAt: new Date().toISOString(),
+        statusHistory: [{ status: data.status || 'Applied', date: new Date().toISOString() }],
       };
-
       apps.unshift(newApp);
-      chrome.storage.local.set({ applications: apps }, async () => {
-        // Try to sync with backend
-        const settings = await new Promise(r =>
-          chrome.storage.local.get('settings', res => r(res.settings || {}))
-        );
-
-        if (settings.syncWithBackend) {
-          try {
-            await syncApplicationToBackend(newApp);
-          } catch (e) {
-            console.warn('Backend sync failed, saved locally:', e);
-          }
-        }
-
+      chrome.storage.local.set({ applications: apps }, () => {
         resolve({ success: true, application: newApp });
       });
     });
   });
 }
 
+async function updateLocalWithBackendId(localId, APP_ID) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get('applications', (result) => {
+      const apps = result.applications || [];
+      const idx = apps.findIndex(a => a.id === localId);
+      if (idx !== -1) apps[idx].APP_ID = APP_ID;
+      chrome.storage.local.set({ applications: apps }, resolve);
+    });
+  });
+}
+
+// ─── Get Applications ───
 async function getApplications(filters = {}) {
+  const token = await getToken();
+  const apiUrl = await getApiUrl();
+
+  // If logged in, fetch from backend
+  if (token) {
+    try {
+      const response = await fetch(`${apiUrl}/api/applications/`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        let apps = data.applications || [];
+
+        if (filters.status) apps = apps.filter(a => a.status === filters.status);
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          apps = apps.filter(a =>
+            (a.jobrole || '').toLowerCase().includes(q) ||
+            (a.company || '').toLowerCase().includes(q)
+          );
+        }
+        return apps;
+      }
+    } catch (e) {
+      console.warn('Backend fetch failed, using local:', e);
+    }
+  }
+
+  // Fallback to local
   return new Promise((resolve) => {
     chrome.storage.local.get('applications', (result) => {
       let apps = result.applications || [];
-
-      if (filters.status) {
-        apps = apps.filter(a => a.status === filters.status);
-      }
+      if (filters.status) apps = apps.filter(a => a.status === filters.status);
       if (filters.search) {
         const q = filters.search.toLowerCase();
         apps = apps.filter(a =>
-          (a.jobTitle || '').toLowerCase().includes(q) ||
+          (a.jobrole || '').toLowerCase().includes(q) ||
           (a.company || '').toLowerCase().includes(q)
         );
       }
-
       resolve(apps);
     });
   });
 }
 
+// ─── Update Application ───
 async function updateApplication(id, data) {
+  const token = await getToken();
+  const apiUrl = await getApiUrl();
+
+  // Update on backend if logged in and we have APP_ID
+  if (token && data.APP_ID) {
+    try {
+      await fetch(`${apiUrl}/api/applications/${data.APP_ID}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (e) {
+      console.warn('Backend update failed:', e);
+    }
+  }
+
+  // Always update local too
   return new Promise((resolve) => {
     chrome.storage.local.get('applications', (result) => {
       const apps = result.applications || [];
       const idx = apps.findIndex(a => a.id === id);
-      if (idx === -1) return resolve({ success: false, error: 'Not found' });
+      if (idx === -1) return resolve({ success: false });
 
       const oldStatus = apps[idx].status;
       apps[idx] = { ...apps[idx], ...data, updatedAt: new Date().toISOString() };
 
-      // Track status changes
       if (data.status && data.status !== oldStatus) {
         apps[idx].statusHistory = apps[idx].statusHistory || [];
-        apps[idx].statusHistory.push({
-          status: data.status,
-          date: new Date().toISOString()
-        });
+        apps[idx].statusHistory.push({ status: data.status, date: new Date().toISOString() });
       }
 
       chrome.storage.local.set({ applications: apps }, () => {
@@ -204,17 +329,37 @@ async function updateApplication(id, data) {
   });
 }
 
+// ─── Delete Application ───
 async function deleteApplication(id) {
+  const token = await getToken();
+  const apiUrl = await getApiUrl();
+
+  // Get APP_ID from local record first
+  const apps = await new Promise(r =>
+    chrome.storage.local.get('applications', res => r(res.applications || []))
+  );
+  const app = apps.find(a => a.id === id);
+
+  if (token && app?.APP_ID) {
+    try {
+      await fetch(`${apiUrl}/api/applications/${app.APP_ID}/`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch (e) {
+      console.warn('Backend delete failed:', e);
+    }
+  }
+
   return new Promise((resolve) => {
     chrome.storage.local.get('applications', (result) => {
-      const apps = (result.applications || []).filter(a => a.id !== id);
-      chrome.storage.local.set({ applications: apps }, () => {
-        resolve({ success: true });
-      });
+      const filtered = (result.applications || []).filter(a => a.id !== id);
+      chrome.storage.local.set({ applications: filtered }, () => resolve({ success: true }));
     });
   });
 }
 
+// ─── Stats ───
 async function getStats() {
   const apps = await getApplications();
   const now = new Date();
@@ -229,20 +374,16 @@ async function getStats() {
     topCompanies: [],
   };
 
-  const statusCounts = {};
   let responded = 0;
   let responseDays = [];
   const companyCounts = {};
+  const statusCounts = {};
 
   for (const app of apps) {
-    // Status counts
+    const dateField = app.createdAt || app.changed_at;
     statusCounts[app.status] = (statusCounts[app.status] || 0) + 1;
-
-    // Recent
-    if (new Date(app.createdAt) > thirtyDaysAgo) stats.recentCount++;
-
-    // Response tracking
-    if (['Shortlisted', 'Rejected', 'Hired', 'Interview'].includes(app.status)) {
+    if (new Date(dateField) > thirtyDaysAgo) stats.recentCount++;
+    if (['Shortlisted', 'Rejected', 'Hired', 'Interview', 'Offer'].includes(app.status)) {
       responded++;
       if (app.statusHistory && app.statusHistory.length > 1) {
         const applied = new Date(app.statusHistory[0].date);
@@ -251,84 +392,32 @@ async function getStats() {
         if (days >= 0) responseDays.push(days);
       }
     }
-
-    // Company counts
-    if (app.company) {
-      companyCounts[app.company] = (companyCounts[app.company] || 0) + 1;
-    }
+    if (app.company) companyCounts[app.company] = (companyCounts[app.company] || 0) + 1;
   }
 
   stats.byStatus = statusCounts;
-  if (apps.length > 0) {
-    stats.responseRate = Math.round((responded / apps.length) * 100);
-  }
-  if (responseDays.length > 0) {
-    stats.avgResponseDays = Math.round(responseDays.reduce((a, b) => a + b, 0) / responseDays.length);
-  }
-  stats.topCompanies = Object.entries(companyCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, count]) => ({ name, count }));
+  if (apps.length > 0) stats.responseRate = Math.round((responded / apps.length) * 100);
+  if (responseDays.length > 0) stats.avgResponseDays = Math.round(responseDays.reduce((a, b) => a + b, 0) / responseDays.length);
+  stats.topCompanies = Object.entries(companyCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
 
   return stats;
 }
 
-async function syncWithBackend() {
-  const settings = await new Promise(r =>
-    chrome.storage.local.get('settings', res => r(res.settings || {}))
-  );
-  const apps = await getApplications();
-
-  try {
-    const response = await fetch(`${settings.apiUrl || JOBFLEX_API}/applications/sync/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ applications: apps }),
-    });
-    const data = await response.json();
-    return { success: true, synced: data.synced };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-}
-
-async function syncApplicationToBackend(app) {
-  const settings = await new Promise(r =>
-    chrome.storage.local.get('settings', res => r(res.settings || {}))
-  );
-  const user = await new Promise(r =>
-    chrome.storage.local.get('user', res => r(res.user || null))
-  );
-
-  const response = await fetch(`${settings.apiUrl || JOBFLEX_API}/applications/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {}),
-    },
-    body: JSON.stringify(app),
-  });
-
-  if (!response.ok) throw new Error('Backend sync failed');
-  return await response.json();
-}
-
+// ─── Auth ───
 async function handleLogin(credentials) {
+  const apiUrl = await getApiUrl();
   try {
-    const settings = await new Promise(r =>
-      chrome.storage.local.get('settings', res => r(res.settings || {}))
-    );
-    const response = await fetch(`${settings.apiUrl || JOBFLEX_API}/auth/login/`, {
+    const response = await fetch(`${apiUrl}/user/extension-login/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
     const data = await response.json();
-    if (response.ok) {
+    if (response.ok && data.success) {
       await new Promise(r => chrome.storage.local.set({ user: data }, r));
-      return { success: true, user: data };
+      return { success: true, user: data.user };
     }
-    return { success: false, error: data.detail || 'Login failed' };
+    return { success: false, error: data.error || 'Login failed' };
   } catch (e) {
     return { success: false, error: 'Cannot connect to server' };
   }
@@ -343,12 +432,10 @@ function generateId() {
   return `jf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Handle notification clicks
 chrome.notifications.onClicked.addListener(() => {
   chrome.action.openPopup();
 });
 
-// Clear badge when popup opens
 chrome.action.onClicked.addListener((tab) => {
   chrome.action.setBadgeText({ text: '', tabId: tab.id });
 });

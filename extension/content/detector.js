@@ -114,13 +114,34 @@
       company: ['.ashby-logo img[alt]', '.company-name'],
       location: ['.ashby-job-posting-brief-items', '.location'],
     },
+    'careers.microsoft.com': {
+  name: 'Microsoft',
+  jobTitle: [
+    '.ms-DocumentCard-title',
+    'h1[class*="JobTitle"]',
+    '[data-automation="job-title"]',
+    '.atm-c-heading',
+    'h1',
+  ],
+  company: [],  // always Microsoft, handled below
+  location: [
+    '[data-automation="job-location"]',
+    '.ms-List-cell .location',
+    '[class*="location"] span:last-child',
+  ],
+  jobNumber: [
+    '[data-automation="job-id"]',
+    '.ms-List-cell [class*="jobId"]',
+    'span[class*="JobNumber"]',
+  ],
+},
   };
 
   function getCurrentPlatform() {
     const hostname = window.location.hostname.replace('www.', '');
     for (const [domain, config] of Object.entries(KNOWN_PLATFORMS)) {
       if (hostname.includes(domain)) {
-        return { domain, config };
+        return { domain, config };  // added domain here
       }
     }
     return null;
@@ -144,12 +165,33 @@
     let jobTitle = null;
     let company = null;
     let location = null;
+    let jobNumber = null;
 
     if (platform) {
-      const { config } = platform;
+      const { config, domain } = platform;
       jobTitle = extractTextFromSelectors(config.jobTitle || []);
       company = extractTextFromSelectors(config.company || []);
       location = extractTextFromSelectors(config.location || []);
+
+      // Extract job number if selectors exist (Microsoft etc.)
+      if (config.jobNumber) {
+        const rawJobNum = extractTextFromSelectors(config.jobNumber);
+        if (rawJobNum) {
+          const numMatch = rawJobNum.match(/\d+/);
+          jobNumber = numMatch ? parseInt(numMatch[0]) : null;
+        }
+      }
+
+      // Microsoft company name hardcoded since it's never on the page
+      if (domain === 'careers.microsoft.com' && !company) {
+        company = 'Microsoft';
+      }
+
+      // Fix location — take only last part after last comma
+      // "India, Karnataka, Bangalore" → "Bangalore"
+      if (location && location.includes(',')) {
+        location = location.split(',').pop().trim();
+      }
     }
 
     // Fallback: generic extraction
@@ -159,23 +201,19 @@
     }
 
     if (!company) {
-      // Try meta tags
       const metaCompany = document.querySelector('meta[property="og:site_name"]');
       if (metaCompany) company = metaCompany.getAttribute('content');
     }
 
     if (!location) {
-      // Try to find location from common patterns
       const locationEl = document.querySelector('[class*="location"], [data-testid*="location"], [id*="location"]');
       if (locationEl) location = locationEl.textContent.trim();
     }
 
-    // Extract salary if available
     const bodyText = document.body.innerText;
     const salaryMatch = bodyText.match(/\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?(?:\s*(?:per|\/)\s*(?:year|yr|annum|hour|hr|month))?/i);
     const salary = salaryMatch ? salaryMatch[0] : null;
 
-    // Extract job type
     let jobType = null;
     const jobTypePatterns = ['full-time', 'part-time', 'contract', 'freelance', 'internship', 'remote'];
     const lowerBody = bodyText.toLowerCase();
@@ -187,12 +225,13 @@
     }
 
     return {
-      jobTitle: cleanText(jobTitle),
+      jobrole: cleanText(jobTitle),       // renamed from jobTitle
       company: cleanText(company),
       location: cleanText(location),
       salary,
       jobType,
-      url: window.location.href,
+      link: window.location.href,          // renamed from url
+      id: jobNumber,                        // company's job number
       platform: platform ? platform.config.name : detectGenericPlatform(),
       appliedDate: new Date().toISOString().split('T')[0],
     };

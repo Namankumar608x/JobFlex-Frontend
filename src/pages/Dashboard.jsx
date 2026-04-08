@@ -17,12 +17,17 @@ import {
   ChevronRight,
   Zap,
   User,
-  ArrowRight
+  ArrowRight,
+  FileText,
+  Send,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Heatmap from "../components/Heatmap";
 import { useAuth } from "../context/authContext";
-
+import { useDashboard } from "../context/dashboardContext";
+import api from "../utils/api";
 // ── Custom Icons ─────────────────────────────────────────────────────────────
 
 const GitHubIcon = ({ size = 20, className = "" }) => (
@@ -51,14 +56,31 @@ const EVENTS = [
 
 export default function Dashboard() {
   const { user } = useAuth();
+  console.log(user);
   const [currentTime, setCurrentTime] = useState(new Date());
-
+  const {stats,setStats}=useDashboard();
   const [githubStats, setGithubStats] = useState({
     contributions: 842,
     repos: 34,
     stars: 12
   });
-
+useEffect(()=>{
+  const fetch=async()=>{
+    try {
+      const res=await api("get","api/applications/summary/");
+      // console.log(res);
+  setStats({
+  total: res.data.total || 0,
+  applied: res.data.status?.Applied || 0,
+  accepted: res.data.status?.Selected || 0, 
+  rejected: res.data.status?.Rejected || 0
+});
+    } catch (error) {
+      console.log("error fetching stats",error);
+    }
+  }
+  fetch();
+},[])
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     const statsLoop = setInterval(() => {
@@ -76,13 +98,36 @@ export default function Dashboard() {
       hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
     }).replace(',', ' ·');
   }, [currentTime]);
-
-  const applicationSummary = [
-    { label: "Applied", value: 24, icon: Briefcase, color: "text-zinc-600", bg: "bg-zinc-100" },
-    { label: "Shortlisted", value: 6, icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
-    { label: "Interviews", value: 4, icon: Target, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Offers", value: 2, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
-  ];
+const applicationSummary = [
+  {
+    label: "Total",
+    value: stats.total,
+    icon: FileText,   // import from lucide-react
+    color: "text-blue-600",
+    bg: "bg-blue-100"
+  },
+  {
+    label: "Applied",
+    value: stats.applied,
+    icon: Send,
+    color: "text-yellow-600",
+    bg: "bg-yellow-100"
+  },
+  {
+    label: "Accepted",
+    value: stats.accepted,
+    icon: CheckCircle,
+    color: "text-green-600",
+    bg: "bg-green-100"
+  },
+  {
+    label: "Rejected",
+    value: stats.rejected,
+    icon: XCircle,
+    color: "text-red-600",
+    bg: "bg-red-100"
+  }
+];
 
   return (
     <div className="flex h-screen bg-zinc-50 overflow-hidden font-sans">
@@ -93,7 +138,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
             <h1 className="font-display font-bold text-3xl text-zinc-900 tracking-tight leading-tight">
-              Welcome back, {user?.name || "Aarav"}
+              Welcome back, {user?.uname || "Aarav"}
             </h1>
             <p className="text-zinc-400 font-light text-sm mt-2 flex items-center gap-2">
               <Clock size={16} className="text-zinc-300" />

@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Loader from "../components/Loader";
-
+import api from "../utils/api";
+import { useApplications } from "../context/applicationsContext";
 // ── Constants & Helpers ──────────────────────────────────────────────────────
 
 const STATUSES = ["All", "Applied", "Shortlisted", "Interview", "Offer", "Rejected"];
@@ -125,7 +126,7 @@ export default function Applications() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
-  
+  const {data,setData}=useApplications();
   // Modal states
   const [modalType, setModalType] = useState(null); // 'add' | 'edit' | 'delete' | 'email'
   const [selectedApp, setSelectedApp] = useState(null);
@@ -136,7 +137,17 @@ export default function Applications() {
 
   // Form state for Add/Edit
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
-
+ useEffect(()=>{
+  const fetch=async()=>{
+    try {
+      const res=await api("get","api/applications/");
+      setData(res.data.applications);
+    } catch (error) {
+      console.error("Error fetching applications:",error);
+    } 
+  }
+  fetch();
+ },[])
   // Close menu on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -219,15 +230,30 @@ export default function Applications() {
   };
 
   // ── Filtering Logic ────────────────────────────────────────────────────────
+const normalizedData = useMemo(() => {
+  return data.map(app => ({
+    id: app.APP_ID,
+    company: app.company,
+    role: app.jobrole,
+    date: new Date(app.changed_at).toLocaleDateString(),
+    status: app.status,
+    source: app.platform,
+    link: app.link
+  }));
+}, [data]);
+ const filteredApps = useMemo(() => {
+  return normalizedData.filter(app => {
+    const matchesFilter = filter === "All" || app.status === filter;
 
-  const filteredApps = useMemo(() => {
-    return apps.filter(app => {
-      const matchesFilter = filter === "All" || app.status === filter;
-      const matchesSearch = app.company.toLowerCase().includes(search.toLowerCase()) || 
-                            app.role.toLowerCase().includes(search.toLowerCase());
-      return matchesFilter && matchesSearch;
-    });
-  }, [apps, filter, search]);
+    const matchesSearch =
+      app.company?.toLowerCase().includes(search.toLowerCase()) ||
+      app.role?.toLowerCase().includes(search.toLowerCase());
+
+    return matchesFilter && matchesSearch;
+  });
+}, [normalizedData, filter, search]);// ✅ FIXED dependency
+
+
 
   if (loading) return <Loader />;
 

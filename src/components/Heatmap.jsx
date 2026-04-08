@@ -22,7 +22,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { Tooltip } from "react-tooltip";
-
+import { useCodeStats } from "../context/codingContext.jsx";
 // ── Reusable Donut Chart Component (from Dashboard) ──────────────────────────
 const GitHubIcon = ({ size = 20, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -63,7 +63,7 @@ const CodingDonutChart = ({ easy, medium, hard, total }) => {
 // ── Heatmap Component ─────────────────────────────────────────────────────────
 
 const Heatmap = () => {
-  const [data, setData] = useState(null);
+  const {data, setData} = useCodeStats();
 const [codingStats, setCodingStats] = useState({
     github: { contributions: 842, repos: 34, stars: 12 }
   });

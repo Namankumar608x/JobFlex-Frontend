@@ -18,12 +18,12 @@ import Loader from './components/Loader';
 import Notifications from './pages/Notifications';
 import Resume from './pages/Resume';
 import Profile from './pages/Profile';
-
+import { AppProviders } from './context/appContext';
 export default function App() {
  
   return (
    <BrowserRouter>
-   <AuthProvider>
+   <AppProviders>
    <Routes>
 <Route path="/" element={<HomePage />}/>
 <Route path="/login" element={<LoginPage />}/>
@@ -37,7 +37,7 @@ export default function App() {
 <Route path="/resume"        element={<ProtectedRoute><Resume /></ProtectedRoute>} />
 <Route path="/profile"       element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 </Routes>
-</AuthProvider>
+</AppProviders>
    </BrowserRouter>
   )
 }

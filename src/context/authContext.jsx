@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
+    setLoading(true);
     try {
       const res = await api("get", "user/me/");
       setUser(res.data);
@@ -33,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  if (loading) return <Loader />;
+ 
 
   return (
     <AuthContext.Provider

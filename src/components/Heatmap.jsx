@@ -95,6 +95,7 @@ const Heatmap = () => {
   const {data, setData} = useCodeStats();
   const [lcFound,setLcFound]=useState(true);
   const [cfFound,setcfFound]=useState(true);
+  // console.log("profile data:",data);
 const [codingStats, setCodingStats] = useState({
     github: { contributions: 842, repos: 34, stars: 12 }
   });

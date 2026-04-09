@@ -46,7 +46,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [showCfm, setShowCfm] = useState(false);
-  const {user}=useAuth();
+  const {user,fetchUser}=useAuth();
 
  
   const googleLogin = async (response) => {
@@ -69,6 +69,7 @@ export default function SignupPage() {
       alert("Google login successful");
   
     }
+    fetchUser();
     navigate("/dashboard");
   } catch (error) {
     alert("Google login error");
@@ -113,6 +114,7 @@ export default function SignupPage() {
       if(res.status===200 || res.status===201){
         console.log(res.data);
         alert("Signup successfull");
+        fetchUser();
     navigate("/dashboard");
       }
     } catch (error) {

@@ -12,6 +12,7 @@ const NOTIFICATIONS = [
 ];
 
 export default function LoginPage() {
+  const { fetchUser } = useAuth();
   const navigate = useNavigate();
   const [form, setForm]       = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,7 @@ const googleLogin = async (response) => {
       alert("Google login successful");
       
     }
+    fetchUser();
 navigate("/dashboard");
   } catch (error) {
     alert("Google login error");
@@ -62,6 +64,7 @@ navigate("/dashboard");
       if(res.status===200 || res.status===201){
         console.log(res.data);
         alert("Login successfull");
+        fetchUser();
     navigate("/");
       }
     } catch (error) {

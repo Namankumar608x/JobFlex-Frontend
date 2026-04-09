@@ -19,6 +19,12 @@ const NAV_ITEMS = [
   { path: "/scan",      icon: <Mail size={16} />, label: "Email Logs"   },
   { path: "/notifications", icon: <Bell size={16} />, label: "Notifications" },
   { path: "/resume", icon: <FileText size={16} />, label: "ATS Checker" }
+  { path: "/dashboard",       icon: "⊞", label: "Dashboard"    },
+  { path: "/job-search",    icon: "◈", label: "New Postings" },
+  { path: "/analytics",       icon: "◑", label: "Analytics"    },
+  { path: "/email-logs",      icon: "✉", label: "Email Logs"   },
+  { path: "/settings",        icon: "◻", label: "Settings"     },
+  { path: "/blog",       icon: "", label: "Blog"        },
 ];
 
 export default function Sidebar({ children }) {

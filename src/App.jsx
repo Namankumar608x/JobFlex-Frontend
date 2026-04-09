@@ -19,6 +19,8 @@ import Notifications from './pages/Notifications';
 import Resume from './pages/Resume';
 import Profile from './pages/Profile';
 import { AppProviders } from './context/appContext';
+import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
 export default function App() {
  
   return (
@@ -36,6 +38,8 @@ export default function App() {
 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 <Route path="/resume"        element={<ProtectedRoute><Resume /></ProtectedRoute>} />
 <Route path="/profile"       element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+<Route path="/blog" element={<Blog />} />
+<Route path="/blog/:id" element={<BlogDetail />} />
 </Routes>
 </AppProviders>
    </BrowserRouter>

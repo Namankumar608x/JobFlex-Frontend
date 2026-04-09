@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { path: "/analytics",       icon: "◑", label: "Analytics"    },
   { path: "/email-logs",      icon: "✉", label: "Email Logs"   },
   { path: "/settings",        icon: "◻", label: "Settings"     },
+  { path: "/blog",       icon: "", label: "Blog"        },
 ];
 
 export default function Sidebar({ children }) {

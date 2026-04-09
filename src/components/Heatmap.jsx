@@ -61,26 +61,75 @@ const CodingDonutChart = ({ easy, medium, hard, total }) => {
 };
 
 // ── Heatmap Component ─────────────────────────────────────────────────────────
+const DonutSkeleton = () => {
+  return (
+    <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-sm animate-pulse flex flex-col sm:flex-row items-center gap-8">
+      <div className="w-32 h-32 bg-zinc-200 rounded-full"></div>
 
+      <div className="flex-1 w-full space-y-3">
+        <div className="h-4 w-32 bg-zinc-200 rounded"></div>
+
+        <div className="space-y-2">
+          <div className="h-3 w-full bg-zinc-200 rounded"></div>
+          <div className="h-3 w-full bg-zinc-200 rounded"></div>
+          <div className="h-3 w-full bg-zinc-200 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+const HeatmapSkeleton = () => {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-6 w-48 bg-zinc-200 rounded"></div>
+
+      <div className="grid grid-cols-12 gap-1">
+        {[...Array(84)].map((_, i) => (
+          <div key={i} className="w-full h-4 bg-zinc-200 rounded"></div>
+        ))}
+      </div>
+    </div>
+  );
+};
 const Heatmap = () => {
   const {data, setData} = useCodeStats();
+  const [lcFound,setLcFound]=useState(true);
+  const [cfFound,setcfFound]=useState(true);
 const [codingStats, setCodingStats] = useState({
     github: { contributions: 842, repos: 34, stars: 12 }
   });
+  const [loading,setLoading]=useState(false);
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       try {
-        const res = await fetchData("tarundeepakjain", "tarundeepakjain");
+        const res = await fetchData();
+        if(res.message){
+        if(res.message==="Data not found"){
+          setLcFound(false);
+          setcfFound(false);
+        }
+        else if(res.message==="Leetcode profile not found"){
+        setLcFound(false);
+        }
+        else{
+        setcfFound(false);
+       }
+
+        }
         console.log("FULL DATA:", res);
         setData(res);
       } catch (err) {
         console.error(err);
       }
+      finally{
+        setLoading(false);
+      }
     };
     load();
   }, []);
 
-  if (!data) return <div className="p-8 text-zinc-400 text-sm">Loading...</div>;
+  // if (!data) return <div className="p-8 text-zinc-400 text-sm">Loading...</div>;
   
   // Safe fallbacks
   const lcStats = data?.leetcode?.stats || {};
@@ -106,7 +155,16 @@ oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
 
         {/* LeetCode Card */}
+         {loading ? (
+    <>
+      <DonutSkeleton />
+      <DonutSkeleton />
+    </>
+  ) : (
+    <>
         <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center gap-8">
+          {lcFound?(
+            <>
           <CodingDonutChart
             easy={lcEasy}
             medium={lcMedium}
@@ -132,10 +190,23 @@ oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
               </div>
             </div>
           </div>
+          </>
+          ):(
+         <>
+         <div>
+          Leetcode profile not found!
+          Kindly fill the username in profile section
+         </div>
+         </>
+          )}
         </div>
+   
 
         {/* Codeforces Card */}
         <div className="bg-white border border-zinc-200 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-center gap-8">
+          {cfFound?(
+
+         <>
           <CodingDonutChart
             easy={cfTotal}
             medium={cfMedium}
@@ -157,8 +228,20 @@ oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
               </div>
             )}
           </div>
+          </>
+           ):(
+            <>
+       <div>
+        Codeforces profile not found!
+        Kindly fill the username in profile section
+       </div>
+            </>
+           )}
         </div>
+          </>
+  )}
       </div>
+         
       {/*Github*/}
         {/* <div className="bg-zinc-900 text-white rounded-[2rem] p-8 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden group">
               <div className="relative z-10">
@@ -191,6 +274,10 @@ oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
       {/* ── Heatmap ── */}
       <div>
          <h2 className="font-display font-bold text-2xl text-zinc-900 tracking-tight leading-none mb-3">Activity Heatmap</h2>
+         {loading ? (
+    <HeatmapSkeleton />
+  ) : (
+    <>
       <CalendarHeatmap
   startDate={new Date(oneYearAgo)}
   endDate={new Date()}
@@ -218,6 +305,8 @@ Total: ${value.total || 0}`
 />
 
 <Tooltip id="heatmap-tooltip" />
+</> 
+  )}
 </div>
     </div>
   );

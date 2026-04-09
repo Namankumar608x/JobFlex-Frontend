@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   Star,
   Target,
+  Send,
+  XCircle,
   Upload,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
@@ -17,6 +19,7 @@ import SectionWrapper from "../components/Sectionwrapper";
 import StatsCard from "../components/StatsCard";
 import FileUpload from "../components/FileUpload";
 import { useAuth } from "../context/authContext";
+import { useDashboard } from "../context/dashboardContext"; 
 
 // ── Role badge ─────────────────────────────────────────────────────────────
 
@@ -50,18 +53,13 @@ function EditableField({ label, value, editing, onChange, type = "text", placeho
 
 // ── Application stats (static placeholder) ────────────────────────────────
 
-const APP_STATS = [
-  { label: "Total Applied", value: 24, icon: Briefcase, accent: true },
-  { label: "Shortlisted",   value: 6,  icon: Star,      color: "text-amber-500", bg: "bg-amber-50" },
-  { label: "Interviews",    value: 4,  icon: Target,     color: "text-violet-500", bg: "bg-violet-50" },
-  { label: "Offers",        value: 2,  icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
-];
 
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default function Profile() {
   const { user } = useAuth();
-
+  const {stats}=useDashboard();
+  // console.log(stats);
   // Editable profile state
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -78,6 +76,35 @@ export default function Profile() {
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeSaved, setResumeSaved] = useState(false);
 
+const APP_STATS = [
+  {
+    label: "Total Applied",
+    value: stats?.total || 0,
+    icon: Briefcase,
+    accent: true,
+  },
+  {
+    label: "Applied",
+    value: stats?.applied || 0,
+    icon: Send,
+    color: "text-yellow-500",
+    bg: "bg-yellow-50",
+  },
+  {
+    label: "Accepted",
+    value: stats?.accepted || 0,
+    icon: CheckCircle2,
+    color: "text-emerald-500",
+    bg: "bg-emerald-50",
+  },
+  {
+    label: "Rejected",
+    value: stats?.rejected || 0,
+    icon: XCircle,
+    color: "text-red-500",
+    bg: "bg-red-50",
+  },
+];
   const handleField = (key) => (value) => setForm((p) => ({ ...p, [key]: value }));
 
   const handleSave = () => {

@@ -87,7 +87,7 @@ export default function Sidebar({ children }) {
         <div className="border-t border-zinc-100 px-3 py-4">
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 cursor-pointer transition-all group">
         {/* <button onClick={()=>navigate("/profile")}>*/}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user?.uname || "T"}</div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center text-xs font-bold text-orange-800 flex-shrink-0">{user?.uname[0] || "T"}</div>
             <button onClick={()=>navigate("/profile")} className="flex-1 min-w-0 cursor-pointer">
               <div className="text-sm font-semibold text-zinc-900 truncate">{user?.uname || "Tarun"}</div>
               <div className="text-[11px] text-zinc-400 truncate">{user?.email || "tarundeepakjain@gmail.com"}</div>

@@ -137,14 +137,45 @@ export default function Applications() {
 
   // Form state for Add/Edit
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const SkeletonRow = () => {
+  return (
+    <tr className="animate-pulse">
+      <td className="px-6 py-4">
+        <div className="h-4 w-24 bg-zinc-200 rounded"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-32 bg-zinc-200 rounded"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-3 w-20 bg-zinc-200 rounded"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-28 bg-zinc-200 rounded"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-3 w-16 bg-zinc-200 rounded"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-3 w-20 bg-zinc-200 rounded"></div>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <div className="h-6 w-6 bg-zinc-200 rounded ml-auto"></div>
+      </td>
+    </tr>
+  );
+};
  useEffect(()=>{
   const fetch=async()=>{
+     setLoading(true); 
     try {
       const res=await api("get","api/applications/");
       setData(res.data.applications);
     } catch (error) {
       console.error("Error fetching applications:",error);
     } 
+    finally{
+       setLoading(false); 
+    }
   }
   fetch();
  },[])
@@ -255,8 +286,7 @@ const normalizedData = useMemo(() => {
 
 
 
-  if (loading) return <Loader />;
-
+  
   return (
     <div className="flex bg-zinc-50 min-h-screen">
       <Sidebar />
@@ -311,7 +341,15 @@ const normalizedData = useMemo(() => {
 
         {/* Table Container */}
         <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-visible">
-          {filteredApps.length > 0 ? (
+         {loading ? (
+  <tbody>
+    {[...Array(6)].map((_, i) => (
+      <SkeletonRow key={i} />
+    ))}
+  </tbody>
+) : (
+  <>
+  { filteredApps.length > 0 ? (
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="border-b border-zinc-100 bg-zinc-50/30">
@@ -390,8 +428,12 @@ const normalizedData = useMemo(() => {
                     </td>
                   </tr>
                 ))}
+                
+           
               </tbody>
+              
             </table>
+            
           ) : (
             <div className="p-20 text-center flex flex-col items-center">
               <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mb-4 text-zinc-200">
@@ -403,7 +445,10 @@ const normalizedData = useMemo(() => {
                 <Plus size={14} /> Create new
               </button>
             </div>
-          )}
+          )} 
+             </>
+               )
+               }
         </div>
       </div>
 

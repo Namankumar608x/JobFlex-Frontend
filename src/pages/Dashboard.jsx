@@ -38,7 +38,19 @@ const GitHubIcon = ({ size = 20, className = "" }) => (
 );
 
 // ── Static Content ───────────────────────────────────────────────────────────
-
+const StatSkeleton = () => {
+  return (
+    <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm animate-pulse">
+      <div className="flex items-center gap-5">
+        <div className="w-12 h-12 bg-zinc-200 rounded-2xl"></div>
+        <div className="space-y-2">
+          <div className="h-3 w-16 bg-zinc-200 rounded"></div>
+          <div className="h-6 w-10 bg-zinc-200 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
 const SHEETS = [
   { name: "Striver A2Z Sheet", desc: "Step-by-step DSA mastery guide.", link: "https://takeuforward.org/strivers-a2z-dsa-course-sheet-2/" },
   { name: "NeetCode 150", desc: "The essential LeetCode patterns.", link: "https://neetcode.io/practice" },
@@ -56,9 +68,10 @@ const EVENTS = [
 
 export default function Dashboard() {
   const { user } = useAuth();
-  console.log(user);
+  // console.log(user);
   const [currentTime, setCurrentTime] = useState(new Date());
   const {stats,setStats}=useDashboard();
+  const [loading, setLoading] = useState(true);
   const [githubStats, setGithubStats] = useState({
     contributions: 842,
     repos: 34,
@@ -66,6 +79,7 @@ export default function Dashboard() {
   });
 useEffect(()=>{
   const fetch=async()=>{
+    setLoading(true);
     try {
       const res=await api("get","api/applications/summary/");
       // console.log(res);
@@ -77,6 +91,9 @@ useEffect(()=>{
 });
     } catch (error) {
       console.log("error fetching stats",error);
+    }
+    finally{
+      setLoading(false);
     }
   }
   fetch();
@@ -158,6 +175,10 @@ const applicationSummary = [
 
         {/* Top Summary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+          {loading ? (
+  [...Array(4)].map((_, i) => <StatSkeleton key={i} />)
+) : (
+  <>
           {applicationSummary.map((stat, i) => (
             <div key={i} className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group">
               <div className="flex items-center gap-5">
@@ -171,6 +192,8 @@ const applicationSummary = [
               </div>
             </div>
           ))}
+          </>
+        )}
         </div>
 
         {/* Coding Insights Section */}

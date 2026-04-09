@@ -80,52 +80,87 @@ const mergeHeatmaps = (lc, cf) => {
   (a, b) => new Date(a.date) - new Date(b.date)
 );
 };
+export const fetchData = async () => {
+  let LCfound = true;
+  let CFfound = true;
 
-export const fetchData = async (LCusername = "", CFusername = "") => {
+  let lcRes = null;
+  let cfRes = null;
+
+  // 🔹 Fetch LC
   try {
-  
-    const lcRes = await api("get",`user/leetcode/${LCusername}`);
-
-    const leetcodeStats = {
-      total: lcRes.data.totalSolved,
-      submissions: lcRes.data.totalSubmissions,
-    };
-
-    const LCheatmap = transformLeetCodeData(
-      lcRes.data.submissionCalendar
-    );
-
-  
-    const cfRes = await api("get", `user/codeforces/${CFusername}`);
-
-     const CFheatmap = transformCFHeatmap(
-  cfRes?.data?.heatmap || {}
-);
-
-    const codeforcesStats = {
-      total: cfRes.data.totalSolved,
-      submissions: cfRes.data.totalSubmissions,
-      rating:cfRes.data.user.rating
-    };
-
-    const mergedHeatmap = mergeHeatmaps(LCheatmap, CFheatmap);
-    // console.log(leetcodeStats);
-    // console.log(codeforcesStats);
-    // console.log(mergedHeatmap);
-    return {
-      leetcode: {
-        stats: leetcodeStats,
-      },
-      codeforces: {
-        stats: codeforcesStats,
-      },
-      heatmap: mergedHeatmap
-    };
-
-  } catch (error) {
-    console.error(error);
-   
+    lcRes = await api("get", "user/leetcode/");
+  } catch (err) {
+    LCfound = false;
   }
 
+  // 🔹 Fetch CF
+  try {
+    cfRes = await api("get", "user/codeforces/");
+  } catch (err) {
+    CFfound = false;
+  }
 
+  // 🔹 If both missing
+  if (!LCfound && !CFfound) {
+    return { message: "Data not found" };
+  }
+
+  // 🔹 LC Data
+  let leetcodeStats = {};
+  let LCheatmap = [];
+
+  if (LCfound) {
+    leetcodeStats = {
+      total: lcRes?.data?.totalSolved || 0,
+      submissions: lcRes?.data?.submissions || [], // must match UI
+    };
+
+    LCheatmap = transformLeetCodeData(
+      lcRes?.data?.submissionCalendar || {}
+    );
+  }
+
+  // 🔹 CF Data
+  let codeforcesStats = {};
+  let CFheatmap = [];
+
+  if (CFfound) {
+    codeforcesStats = {
+      total: cfRes?.data?.totalSolved || 0,
+      submissions: cfRes?.data?.submissions || [],
+      rating: cfRes?.data?.user?.rating || 0,
+    };
+
+    CFheatmap = transformCFHeatmap(
+      cfRes?.data?.heatmap || {}
+    );
+  }
+
+  // 🔹 Merge heatmaps safely
+  const mergedHeatmap = mergeHeatmaps(LCheatmap, CFheatmap);
+
+  // 🔹 Handle partial cases
+  if (!LCfound) {
+    return {
+      message: "Leetcode profile not found",
+      codeforces: { stats: codeforcesStats },
+      heatmap: mergedHeatmap
+    };
+  }
+
+  if (!CFfound) {
+    return {
+      message: "Codeforces profile not found",
+      leetcode: { stats: leetcodeStats },
+      heatmap: mergedHeatmap
+    };
+  }
+
+  // ✅ Normal case
+  return {
+    leetcode: { stats: leetcodeStats },
+    codeforces: { stats: codeforcesStats },
+    heatmap: mergedHeatmap
+  };
 };

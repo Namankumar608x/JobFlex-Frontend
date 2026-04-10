@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
+import Loader from "../components/Loader";
 const APPS = [
   { co: "Stripe",  role: "Frontend Engineer",    tag: "Interview",  tagCls: "bg-amber-50 text-amber-600 border border-amber-200" },
   { co: "Linear",  role: "Product Designer",     tag: "Applied",    tagCls: "bg-blue-50 text-blue-600 border border-blue-200" },
@@ -68,10 +69,12 @@ function MockDashboard() {
 }
 
 export default function HomePage() {
-  const {user}=useAuth();
+const {user,loading}=useAuth();
+console.log(user);
+
 //  console.log(user);
     const navigate=useNavigate();
-
+if(loading) return <Loader />
   return (
     <div className="min-h-screen bg-zinc-50">
       <style>{`

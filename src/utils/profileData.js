@@ -113,7 +113,7 @@ export const fetchData = async () => {
   if (LCfound) {
     leetcodeStats = {
       total: lcRes?.data?.totalSolved || 0,
-      submissions: lcRes?.data?.submissions || [], // must match UI
+      submissions: lcRes?.data?.totalSubmissions || [], // must match UI
     };
 
     LCheatmap = transformLeetCodeData(

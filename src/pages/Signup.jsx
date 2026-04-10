@@ -69,7 +69,7 @@ export default function SignupPage() {
       alert("Google login successful");
   
     }
-    navigate("/dashboard");
+    navigate("/");
   } catch (error) {
     alert("Google login error");
     console.error(error);
@@ -113,7 +113,7 @@ export default function SignupPage() {
       if(res.status===200 || res.status===201){
         console.log(res.data);
         alert("Signup successfull");
-    navigate("/dashboard");
+    navigate("/");
       }
     } catch (error) {
        console.error("Login error:",error);

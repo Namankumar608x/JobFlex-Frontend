@@ -40,7 +40,7 @@ const googleLogin = async (response) => {
       alert("Google login successful");
       
     }
-navigate("/dashboard");
+navigate("/");
   } catch (error) {
     alert("Google login error");
     console.error(error);

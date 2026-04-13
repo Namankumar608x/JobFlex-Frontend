@@ -11,9 +11,10 @@ export default function Blog() {
   const [blogtext, setBlogtext] = useState("");
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("all"); // ← new
   const navigate = useNavigate();
   const { user } = useAuth();
-
+console.log("USER:", user);
   const fetchBlogs = () => {
     fetch("http://127.0.0.1:8000/api/blogs/")
       .then((res) => res.json())
@@ -54,9 +55,12 @@ export default function Blog() {
     setSubmitting(false);
   };
 
-  const filteredBlogs = blogs.filter((b) =>
-    b.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredBlogs = blogs
+    .filter((b) => {
+      if (activeTab === "mine") return b.U_ID === (user?.U_ID || user?.id);
+      return true;
+    })
+    .filter((b) => b.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <Sidebar>
@@ -87,9 +91,10 @@ export default function Blog() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="anim-1 mb-6">
-        <div className="relative">
+      {/* Search + Tabs */}
+      <div className="anim-1 flex items-center gap-4 mb-6">
+        {/* Search */}
+        <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">⌕</span>
           <input
             type="text"
@@ -98,6 +103,23 @@ export default function Blog() {
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 pr-4 py-2 bg-white border border-zinc-200 rounded-lg text-sm text-zinc-700 placeholder-zinc-400 focus:outline-none focus:border-zinc-400 w-full transition-all"
           />
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-1">
+          {["all", "mine"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`text-[11px] font-medium px-3 py-1.5 rounded-md transition-all
+                ${activeTab === tab
+                  ? "bg-zinc-900 text-white shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-900 hover:bg-white"
+                }`}
+            >
+              {tab === "all" ? "All Blogs" : "My Blogs"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -120,8 +142,12 @@ export default function Blog() {
           {filteredBlogs.length === 0 && (
             <div className="text-center py-20 text-zinc-400">
               <div className="text-4xl mb-3">📝</div>
-              <p className="text-sm font-medium text-zinc-500">No blogs found</p>
-              <p className="text-xs mt-1">Be the first to share your experience!</p>
+              <p className="text-sm font-medium text-zinc-500">
+                {activeTab === "mine" ? "You haven't written any blogs yet" : "No blogs found"}
+              </p>
+              <p className="text-xs mt-1">
+                {activeTab === "mine" ? "Click '+ Write Blog' to share your experience!" : "Be the first to share!"}
+              </p>
             </div>
           )}
 
@@ -145,6 +171,14 @@ export default function Blog() {
                     </span>
                     <span className="text-[11px] text-zinc-400">
                       ✍ {blog.uname || `User #${blog.U_ID}`}
+                    </span>
+                    {/* Upvote count */}
+                    <span className="text-[11px] text-zinc-400">
+                      ▲ {blog.upvote_count || 0}
+                    </span>
+                    {/* Comment count */}
+                    <span className="text-[11px] text-zinc-400">
+                      💬 {blog.comments?.length || 0}
                     </span>
                     <span className="text-blue-500 text-[11px] font-medium ml-auto">
                       Read more →
@@ -170,12 +204,8 @@ export default function Blog() {
             <p className="text-zinc-400 text-sm font-light mb-6">
               Share your interview story with the community
             </p>
-
-            {/* Title */}
             <div className="mb-4">
-              <label className="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">
-                Title
-              </label>
+              <label className="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Title</label>
               <input
                 type="text"
                 placeholder="e.g. My Google Interview Experience"
@@ -184,12 +214,8 @@ export default function Blog() {
                 className="w-full px-4 py-2.5 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-zinc-400 transition-all"
               />
             </div>
-
-            {/* Blog Text */}
             <div className="mb-6">
-              <label className="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">
-                Your Experience
-              </label>
+              <label className="text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Your Experience</label>
               <textarea
                 rows={5}
                 placeholder="Share your interview experience in detail..."
@@ -198,8 +224,6 @@ export default function Blog() {
                 className="w-full px-4 py-2.5 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-zinc-400 transition-all resize-none"
               />
             </div>
-
-            {/* Buttons */}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowModal(false)}

@@ -58,6 +58,7 @@ function EditableField({ label, value, editing, onChange, type = "text", placeho
 
 export default function Profile() {
   const { user } = useAuth();
+  console.log(user);
   const {stats}=useDashboard();
   // console.log(stats);
   // Editable profile state
@@ -69,8 +70,8 @@ export default function Profile() {
     bio:      user?.bio    || "",
     location: user?.location || "",
     linkedin: user?.linkedin || "",
-    leetcode: user?.leetcode || "",
-    codeforces: user?.codeforces || "",
+    leetcode: user?.leetcode_username || "",
+    codeforces: user?.codeforces_username || "",
   });
   const [savedForm, setSavedForm] = useState({ ...form });
 

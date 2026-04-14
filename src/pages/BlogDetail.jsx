@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/authContext";
-
+import { useBlog } from "../context/blogContext";
 export default function BlogDetail() {
-  const { id } = useParams();
-  const [blog, setBlog] = useState(null);
+  const {id}=useParams();
+ const {blogs}=useBlog();
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -14,24 +14,29 @@ export default function BlogDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const fetchBlog = () => {
-    fetch(`http://127.0.0.1:8000/api/blogs/${id}/`)
-      .then((res) => res.json())
-      .then((data) => {
-        setBlog(data);
-        setUpvoteCount(data.upvote_count || 0);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  };
+  // const fetchBlog = () => {
+  //   fetch(`http://127.0.0.1:8000/api/blogs/${id}/`)
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       setBlog(data);
+  //       setUpvoteCount(data.upvote_count || 0);
+  //       setLoading(false);
+  //     })
+  //     .catch((err) => {
+  //       console.error(err);
+  //       setLoading(false);
+  //     });
+  // };
 
+  // useEffect(() => {
+  //   fetchBlog();
+  // }, [id]);
   useEffect(() => {
-    fetchBlog();
-  }, [id]);
-
+  if (blogs.length > 0) {
+    setLoading(false);
+  }
+}, [blogs]);
+const blog=blogs.find(b => b.id == id);
   const handleUpvote = async () => {
     const res = await fetch(`http://127.0.0.1:8000/api/blogs/${id}/upvote/`, {
       method: "POST",

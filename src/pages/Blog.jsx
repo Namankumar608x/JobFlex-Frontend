@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/authContext";
-
+import { useBlog } from "../context/blogContext";
 export default function Blog() {
-  const [blogs, setBlogs] = useState([]);
+  
   const [loading, setLoading] = useState(true);
+  const {blogs, setBlogs} =useBlog();
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
   const [blogtext, setBlogtext] = useState("");
@@ -14,7 +15,8 @@ export default function Blog() {
   const [activeTab, setActiveTab] = useState("all"); // ← new
   const navigate = useNavigate();
   const { user } = useAuth();
-console.log("USER:", user);
+// console.log("USER:", user);
+console.log(blogs);
   const fetchBlogs = () => {
     fetch("http://127.0.0.1:8000/api/blogs/")
       .then((res) => res.json())
@@ -29,6 +31,7 @@ console.log("USER:", user);
   };
 
   useEffect(() => {
+    if(blogs.length>0) setLoading(false);
     fetchBlogs();
   }, []);
 

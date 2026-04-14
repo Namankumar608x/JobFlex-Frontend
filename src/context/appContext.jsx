@@ -2,7 +2,7 @@ import { DashboardProvider } from "./dashboardContext";
 import { AuthProvider } from "./authContext";
 import { CodeStatsProvider } from "./codingContext";
 import { ApplicationsProvider } from "./applicationsContext";
-import { BlogProvider } from "./BlogContext";
+import { BlogProvider } from "./blogContext";
 export const AppProviders = ({ children }) => {
   return (
     <AuthProvider>

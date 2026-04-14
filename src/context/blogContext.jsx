@@ -8,26 +8,26 @@ export const BlogProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-const fetchBlogs = useCallback(async () => {
-    if (blogs.length > 0) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/blogs/");
-      const data = await res.json();
-      setBlogs(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [blogs.length]);
+// const fetchBlogs = useCallback(async () => {
+//     if (blogs.length > 0) {
+//       setLoading(false);
+//       return;
+//     }
+//     setLoading(true);
+//     try {
+//       const res = await fetch("http://127.0.0.1:8000/api/blogs/");
+//       const data = await res.json();
+//       setBlogs(data);
+//     } catch (err) {
+//       console.error(err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, [blogs.length]);
 
-  useEffect(() => {
-    fetchBlogs();
-  }, [fetchBlogs]);
+  // useEffect(() => {
+  //   fetchBlogs();
+  // }, [fetchBlogs]);
 
   const addBlog = async (title, blogtext) => {
     try {
@@ -80,8 +80,9 @@ const fetchBlogs = useCallback(async () => {
     <BlogContext.Provider
       value={{
         blogs,
+        setBlogs,
         loading,
-        fetchBlogs,
+        setLoading,
         addBlog,
         toggleUpvote,
         addComment,

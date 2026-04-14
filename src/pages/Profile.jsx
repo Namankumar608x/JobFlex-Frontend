@@ -20,7 +20,7 @@ import StatsCard from "../components/StatsCard";
 import FileUpload from "../components/FileUpload";
 import { useAuth } from "../context/authContext";
 import { useDashboard } from "../context/dashboardContext"; 
-
+import api from "../utils/api";
 // ── Role badge ─────────────────────────────────────────────────────────────
 
 const ROLE_META = {
@@ -69,6 +69,8 @@ export default function Profile() {
     bio:      user?.bio    || "",
     location: user?.location || "",
     linkedin: user?.linkedin || "",
+    leetcode: user?.leetcode || "",
+    codeforces: user?.codeforces || "",
   });
   const [savedForm, setSavedForm] = useState({ ...form });
 
@@ -107,11 +109,23 @@ const APP_STATS = [
 ];
   const handleField = (key) => (value) => setForm((p) => ({ ...p, [key]: value }));
 
-  const handleSave = () => {
+const handleSave = async () => {
+  try {
+    const payload = {
+      linkedin_url: form.linkedin,
+      leetcode_username: form.leetcode,
+      codeforces_username: form.codeforces,
+    };
+
+    await api("post", "user/update-profile-links/", payload);
+
     setSavedForm({ ...form });
     setEditing(false);
-    // TODO: api("put", "user/profile/", form)
-  };
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const handleCancel = () => {
     setForm({ ...savedForm });
@@ -245,6 +259,21 @@ const APP_STATS = [
                 editing={editing}
                 onChange={handleField("linkedin")}
                 placeholder="https://linkedin.com/in/..."
+              />
+              <EditableField
+                label="LeetCode Username"
+                value={form.leetcode}
+                editing={editing}
+                onChange={handleField("leetcode")}
+                placeholder="your_leetcode"
+              />
+
+              <EditableField
+                label="Codeforces Username"
+                value={form.codeforces}
+                editing={editing}
+                onChange={handleField("codeforces")}
+                placeholder="your_codeforces"
               />
             </div>
 

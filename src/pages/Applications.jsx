@@ -25,13 +25,13 @@ import api from "../utils/api";
 import { useApplications } from "../context/applicationsContext";
 // ── Constants & Helpers ──────────────────────────────────────────────────────
 
-const STATUSES = ["All", "Applied", "Shortlisted", "Interview", "Offer", "Rejected"];
+const STATUSES = ["All", "Applied", "Accepted", "Rejected"];
 
 const STATUS_CONFIG = {
   Applied: { label: "Applied", color: "text-blue-500 bg-blue-50/50" },
-  Shortlisted: { label: "Shortlisted", color: "text-amber-500 bg-amber-50/50" },
-  Interview: { label: "Interview", color: "text-violet-500 bg-violet-50/50" },
-  Offer: { label: "Offer", color: "text-green-600 bg-green-50/50" },
+  Accepted: { label: "Accepted", color: "text-green-500 bg-green-50/50" },
+  // Interview: { label: "Interview", color: "text-violet-500 bg-violet-50/50" },
+  // Offer: { label: "Offer", color: "text-green-600 bg-green-50/50" },
   Rejected: { label: "Rejected", color: "text-red-500 bg-red-50/50" },
 };
 
@@ -127,6 +127,7 @@ export default function Applications() {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const {data,setData}=useApplications();
+  // console.log(data);
   // Modal states
   const [modalType, setModalType] = useState(null); // 'add' | 'edit' | 'delete' | 'email'
   const [selectedApp, setSelectedApp] = useState(null);
@@ -283,7 +284,7 @@ const normalizedData = useMemo(() => {
     return matchesFilter && matchesSearch;
   });
 }, [normalizedData, filter, search]);// ✅ FIXED dependency
-
+console.log("filtered apps:",filteredApps);
 
 
   

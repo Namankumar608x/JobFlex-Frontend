@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { path: "/applications", icon: <Briefcase size={16} />, label: "Applications" },
   { path: "/job-search",    icon: <Search size={16}/>, label: "New Postings" },
   { path: "/scan",      icon: <Mail size={16} />, label: "Email Logs"   },
-  { path: "/notifications", icon: <Bell size={16} />, label: "Notifications" },
+ 
   { path: "/resume", icon: <FileText size={16} />, label: "ATS Checker" },
   { path: "/blog",icon: "✐",label:"Blog"},
 ];

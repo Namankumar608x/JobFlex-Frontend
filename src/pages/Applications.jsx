@@ -90,7 +90,7 @@ const INITIAL_FORM_STATE = {
   salary: "",
   contact: "",
   email: "",
-  notes: ""
+  notes: "",
 };
 
 // ── Sub-Components ───────────────────────────────────────────────────────────
@@ -213,18 +213,26 @@ export default function Applications() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleAddApplication = useCallback(() => {
-    const newApp = {
-      ...formData,
-      id: Date.now(),
-      confidence: 100, // Default for manual entries
-      source: "Manual",
-      lastUpdate: "Just now",
-      saved: false,
-      lastEmail: null
-    };
-    setApps(prev => [newApp, ...prev]);
+  const handleAddApplication = useCallback(async() => {
+    try {
+     const payload = {
+  company: formData.company,
+  jobrole: formData.role,
+  link: formData.link,
+  status: formData.status,
+  platform: "Manual",
+  location: formData.location,
+  notes: formData.notes
+};
+
+const res = await api("post","api/applications/",payload);
+setApps(prev => [res.data.application, ...prev]);
+  
     setModalType(null);
+    } catch (error) {
+      console.error("application adding error:",error);
+    }
+   
   }, [formData]);
 
   const handleEditApplication = useCallback((id) => {
@@ -284,7 +292,7 @@ const normalizedData = useMemo(() => {
     return matchesFilter && matchesSearch;
   });
 }, [normalizedData, filter, search]);// ✅ FIXED dependency
-console.log("filtered apps:",filteredApps);
+// console.log("filtered apps:",filteredApps);
 
 
   
@@ -303,12 +311,12 @@ console.log("filtered apps:",filteredApps);
               Track, manage, and analyze your job applications
             </p>
           </div>
-          <button 
+          {/* <button 
             onClick={() => setModalType('add')}
             className="bg-zinc-900 text-white rounded-xl py-2.5 px-5 font-semibold text-sm hover:bg-zinc-800 transition-all flex items-center gap-2 shadow-sm"
           >
             <Plus size={18} /> Add Application
-          </button>
+          </button> */}
         </div>
 
         {/* Filter & Search */}

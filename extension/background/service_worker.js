@@ -21,17 +21,16 @@ function initStorage() {
   });
 }
 
-// ─── Get stored auth token ───
+
 async function getToken() {
   return new Promise(async (resolve) => {
     chrome.storage.local.get('user', async (result) => {
       const user = result.user;
       if (!user?.access) return resolve(null);
 
-      // Check if token is expired
       try {
         const payload = JSON.parse(atob(user.access.split('.')[1]));
-        const expiresAt = payload.exp * 1000; // convert to ms
+        const expiresAt = payload.exp * 1000; 
         const now = Date.now();
 
         console.log('Token expires at:', new Date(expiresAt).toISOString());
@@ -39,11 +38,11 @@ async function getToken() {
         console.log('Token expired?', now >= expiresAt);
 
         if (now < expiresAt) {
-          // Token still valid
+        
           return resolve(user.access);
         }
 
-        // Token expired — try to refresh
+        
         console.log('Token expired, attempting refresh...');
         const apiUrl = await getApiUrl();
         const response = await fetch(`${apiUrl}/user/refresh/`, {
@@ -55,12 +54,11 @@ async function getToken() {
         if (response.ok) {
           const data = await response.json();
           console.log('Token refreshed successfully');
-          // Save new access token
+
           const updatedUser = { ...user, access: data.access };
           chrome.storage.local.set({ user: updatedUser });
           return resolve(data.access);
         } else {
-          // Refresh also expired — force logout
           console.log('Refresh token also expired, logging out');
           chrome.storage.local.remove('user');
           return resolve(null);
@@ -81,7 +79,6 @@ async function getApiUrl() {
   });
 }
 
-// ─── Message Router ───
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
 
@@ -132,7 +129,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// ─── Job Detection ───
 async function handleJobDetection(jobData, tab) {
   const settings = await new Promise(resolve =>
     chrome.storage.local.get('settings', r => resolve(r.settings || {}))
@@ -191,7 +187,7 @@ async function saveApplication(data) {
 
       if (response.ok) {
         const backendData = await response.json();
-        // Update local record with backend APP_ID
+        
         await updateLocalWithBackendId(localResult.application.id, backendData.application.APP_ID);
         return { success: true, application: { ...localResult.application, APP_ID: backendData.application.APP_ID } };
       }
@@ -239,12 +235,11 @@ async function updateLocalWithBackendId(localId, APP_ID) {
   });
 }
 
-// ─── Get Applications ───
+
 async function getApplications(filters = {}) {
   const token = await getToken();
   const apiUrl = await getApiUrl();
 
-  // If logged in, fetch from backend
   if (token) {
     try {
       const response = await fetch(`${apiUrl}/api/applications/`, {
@@ -269,7 +264,6 @@ async function getApplications(filters = {}) {
     }
   }
 
-  // Fallback to local
   return new Promise((resolve) => {
     chrome.storage.local.get('applications', (result) => {
       let apps = result.applications || [];
@@ -286,12 +280,11 @@ async function getApplications(filters = {}) {
   });
 }
 
-// ─── Update Application ───
 async function updateApplication(id, data) {
   const token = await getToken();
   const apiUrl = await getApiUrl();
 
-  // Update on backend if logged in and we have APP_ID
+ 
   if (token && data.APP_ID) {
     try {
       await fetch(`${apiUrl}/api/applications/${data.APP_ID}/`, {
@@ -307,7 +300,6 @@ async function updateApplication(id, data) {
     }
   }
 
-  // Always update local too
   return new Promise((resolve) => {
     chrome.storage.local.get('applications', (result) => {
       const apps = result.applications || [];
@@ -328,13 +320,9 @@ async function updateApplication(id, data) {
     });
   });
 }
-
-// ─── Delete Application ───
 async function deleteApplication(id) {
   const token = await getToken();
   const apiUrl = await getApiUrl();
-
-  // Get APP_ID from local record first
   const apps = await new Promise(r =>
     chrome.storage.local.get('applications', res => r(res.applications || []))
   );
@@ -359,7 +347,6 @@ async function deleteApplication(id) {
   });
 }
 
-// ─── Stats ───
 async function getStats() {
   const apps = await getApplications();
   const now = new Date();
@@ -403,7 +390,6 @@ async function getStats() {
   return stats;
 }
 
-// ─── Auth ───
 async function handleLogin(credentials) {
   const apiUrl = await getApiUrl();
   try {

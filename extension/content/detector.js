@@ -1,14 +1,8 @@
-// JobFlex Content Script - Job Application Page Detector
-// Detection strategy:
-//   1. Strict Blacklist (localhost, Google, etc.) -> NEVER fire
-//   2. Explicit Bypass (URL contains job ID) -> FIRE
-//   3. Strict Whitelist (Global boards, ATS, Regional boards) -> FIRE
-//   4. Careers Subdomain check -> FIRE
+
 
 (function () {
   'use strict';
 
-  // ─── 1. STRICT BLACKLIST ───────────────────────────────────────────────────
   const BLACKLISTED_HOSTS = [
     'localhost', '127.0.0.1', '0.0.0.0',
     'google.', 'bing.com', 'yahoo.com', 'duckduckgo.com', 'baidu.com', // Search engines
@@ -21,37 +15,31 @@
     /[?&]q=/i, /[?&]query=/i, /[?&]search=/i, /\/search\?/i, /\/search\//i,
   ];
 
-  // ─── 2. MASSIVE WHITELIST ──────────────────────────────────────────────────
   const WHITELISTED_DOMAINS = [
-    // Global Job Boards
+    
     'linkedin.com/jobs', 'indeed.com', 'glassdoor.com', 'monster.com',
     'ziprecruiter.com', 'dice.com', 'simplyhired.com', 'careerbuilder.com',
     'wellfound.com', 'angel.co/jobs', 'jooble.org', 'adzuna.com',
     
-    // Remote & Tech Specific
     'weworkremotely.com', 'remote.co', 'remoteok.com', 'flexjobs.com',
     'otta.com', 'builtin.com', 'themuse.com', 'ycombinator.com/jobs',
     
-    // India-Specific Job Boards
+   
     'naukri.com', 'foundit.in', 'shine.com', 'instahyre.com', 
     'internshala.com', 'apna.co', 'hirist.com', 'iimjobs.com', 
     'cutshort.io', 'freshersworld.com', 'updazz.com', 'hasjob.co',
 
-    // Applicant Tracking Systems (ATS) - where companies host their careers pages
     'greenhouse.io', 'lever.co', 'workday.com', 'myworkdayjobs.com',
     'smartrecruiters.com', 'ashbyhq.com', 'icims.com', 'jobvite.com',
     'taleo.net', 'successfactors.', 'bamboohr.com', 'workable.com',
     'recruitee.com', 'teamtailor.com', 'breezy.hr', 'freshteam.com',
     'pinpointhq.com', 'rippling.com/jobs', 'dover.com',
 
-    // Major Tech Giants (Direct careers pages)
     'careers.microsoft.com', 'amazon.jobs', 'careers.google.com',
     'jobs.apple.com', 'metacareers.com', 'jobs.netflix.com', 'careers.ibm.com'
   ];
 
-  // ─── 3. DATA EXTRACTORS FOR FAMOUS PLATFORMS ───────────────────────────────
-  // Note: If a platform isn't here, the generic fallback at the bottom will still catch it.
-  const KNOWN_PLATFORMS = {
+   const KNOWN_PLATFORMS = {
     'linkedin.com': {
       name: 'LinkedIn',
       jobTitle: ['.job-details-jobs-unified-top-card__job-title', 'h1.t-24'],
@@ -133,7 +121,6 @@
     },
   };
 
-  // ─── HELPER FUNCTIONS ────────────────────────────────────────────────────────
 
   function getCurrentPlatform() {
     const hostname = window.location.hostname.replace('www.', '');
@@ -158,33 +145,27 @@
     return null;
   }
 
-  // ─── GATEKEEPER LOGIC ────────────────────────────────────────────────────────
   
   function isJobPage() {
     const host = window.location.hostname.toLowerCase();
     const url = window.location.href.toLowerCase();
 
-    // 1. Check Blacklist FIRST
+   
     if (BLACKLISTED_HOSTS.some(b => host.includes(b))) return false;
 
-    // 2. Explicit Job ID bypass (Handles split-screen UI on sites like Microsoft/LinkedIn)
     const hasExplicitJobId = /[?&](jobId|job_id|reqId|job|currentJobId)=/i.test(url) || /\/job\//i.test(url);
     if (hasExplicitJobId) return true;
 
-    // 3. Kill generic search URLs
     if (SEARCH_URL_PATTERNS.some(p => p.test(url))) return false;
 
-    // 4. Check Whitelist
     if (WHITELISTED_DOMAINS.some(w => url.includes(w) || host.includes(w))) return true;
 
-    // 5. Check for common subdomain structures (e.g., careers.company.com)
     const parts = host.split('.');
     if (parts.length >= 3 && (parts[0] === 'careers' || parts[0] === 'jobs')) return true;
 
     return false;
   }
 
-  // ─── EXTRACTION LOGIC ────────────────────────────────────────────────────────
 
   function extractJobData() {
     const platform = getCurrentPlatform();

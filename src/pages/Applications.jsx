@@ -199,7 +199,7 @@ export default function Applications() {
         role: selectedApp.role || "",
         link: selectedApp.link || "",
         date: selectedApp.date || "",
-        status: selectedApp.status || "Applied",
+        status: selectedApp.status || "Rejected",
         location: selectedApp.location || "",
         salary: selectedApp.salary || "",
         contact: selectedApp.contact || "",
@@ -406,32 +406,10 @@ const normalizedData = useMemo(() => {
                           >
                             <ExternalLink size={14} className="text-zinc-400" /> Open Job Link
                           </button>
-                          <button 
-                            onClick={() => { setSelectedApp(app); setModalType('email'); setActiveMenu(null); }}
-                            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-all"
-                          >
-                            <Mail size={14} className="text-zinc-400" /> View Last Email
-                          </button>
-                          <button 
-                            onClick={() => { handleBookmark(app.id); setActiveMenu(null); }}
-                            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-all"
-                          >
-                            <Bookmark size={14} className={app.saved ? "text-amber-500" : "text-zinc-400"} fill={app.saved ? "currentColor" : "none"} /> 
-                            {app.saved ? "Saved" : "Save Application"}
-                          </button>
-                          <div className="h-px bg-zinc-100 my-1 mx-2" />
-                          <button 
-                            onClick={() => { setSelectedApp(app); setModalType('edit'); setActiveMenu(null); }}
-                            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-all"
-                          >
-                            <Pencil size={14} className="text-zinc-400" /> Edit Details
-                          </button>
-                          <button 
-                            onClick={() => { setSelectedApp(app); setModalType('delete'); setActiveMenu(null); }}
-                            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-all"
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
+                          
+                          
+                          
+  
                         </div>
                       )}
                     </td>

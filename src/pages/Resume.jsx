@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Zap,
   CheckCircle2,
   AlertCircle,
   Lightbulb,
-  TrendingUp,
   Tag,
-  ChevronRight,
+  FileText,
+  RefreshCw,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import FileUpload from "../components/FileUpload";
 import SectionWrapper from "../components/Sectionwrapper";
-import { analyzeResume } from "../services/resumeService";
+import { getResume, scanResume, analyzeResume } from "../services/resumeService";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -74,12 +74,30 @@ function ScoreRing({ percentage }) {
 
 export default function Resume() {
   const [resumeFile, setResumeFile] = useState(null);
+  const [storedResume, setStoredResume] = useState(null);
+  const [fetchingResume, setFetchingResume] = useState(true);
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
-  const canAnalyze = resumeFile && jobDescription.trim().length > 30;
+  // Fetch stored resume on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getResume();
+        setStoredResume(data);
+      } catch {
+        setStoredResume(null);
+      } finally {
+        setFetchingResume(false);
+      }
+    })();
+  }, []);
+
+  // Can analyze if: (stored resume OR uploaded file) + JD has enough content
+  const hasResume = !!(storedResume || resumeFile);
+  const canAnalyze = hasResume && jobDescription.trim().length > 30;
 
   const handleAnalyze = async () => {
     if (!canAnalyze) return;
@@ -87,10 +105,19 @@ export default function Resume() {
     setError("");
     setResult(null);
     try {
-      const data = await analyzeResume(resumeFile, jobDescription);
+      let data;
+      if (resumeFile) {
+        // New file uploaded — use analyze endpoint (saves + scores)
+        data = await analyzeResume(resumeFile, jobDescription);
+        setStoredResume({ word_count: "—", uploaded_at: new Date().toISOString() });
+      } else {
+        // Use stored resume — just scan with JD
+        data = await scanResume(jobDescription);
+      }
       setResult(data);
     } catch (err) {
-      setError("Analysis failed. Please try again.");
+      const msg = err.response?.data?.error || "Analysis failed. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -118,16 +145,53 @@ export default function Resume() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Resume Upload */}
+        {/* Resume Upload / Stored */}
         <SectionWrapper
           title="Your Resume"
-          description="PDF, DOC or DOCX · Max 5 MB"
+          description={storedResume ? "Resume on file — upload a new one to replace it" : "PDF · Max 5 MB"}
         >
-          <FileUpload
-            onFileSelect={setResumeFile}
-            accept=".pdf,.doc,.docx"
-            label="Upload Resume"
-          />
+          {fetchingResume ? (
+            <div className="flex items-center gap-2 text-sm text-zinc-400 py-4">
+              <span className="spinner-sm" style={{ borderColor: "rgba(0,0,0,.15)", borderTopColor: "#71717a" }} />
+              Checking for stored resume…
+            </div>
+          ) : storedResume && !resumeFile ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <FileText size={18} className="text-emerald-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-emerald-800">Resume on file</p>
+                  <p className="text-xs text-emerald-600 font-light mt-0.5">
+                    {storedResume.word_count?.toLocaleString()} words · Uploaded {new Date(storedResume.uploaded_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />
+              </div>
+              <button
+                onClick={() => setResumeFile(null)}
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 transition-colors font-medium"
+              >
+                <RefreshCw size={12} /> Replace with a different resume
+              </button>
+            </div>
+          ) : (
+            <FileUpload
+              onFileSelect={setResumeFile}
+              accept=".pdf"
+              label="Upload Resume"
+            />
+          )}
+          {/* After picking a new file while a stored one exists, show clear option */}
+          {storedResume && resumeFile && (
+            <button
+              onClick={() => setResumeFile(null)}
+              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 transition-colors font-medium mt-2"
+            >
+              <RefreshCw size={12} /> Use stored resume instead
+            </button>
+          )}
         </SectionWrapper>
 
         {/* Job Description */}
@@ -175,7 +239,7 @@ export default function Resume() {
         </button>
         {!canAnalyze && !loading && (
           <p className="text-xs text-zinc-400 mt-2 font-light">
-            {!resumeFile
+            {!hasResume
               ? "Upload your resume to get started."
               : "Paste a job description (min. 30 characters)."}
           </p>

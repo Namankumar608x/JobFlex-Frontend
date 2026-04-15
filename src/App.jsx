@@ -1,4 +1,3 @@
-import { useState,useEffect } from 'react'
 import './App.css'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from './pages/Home';
@@ -20,7 +19,7 @@ import { AppProviders } from './context/appContext';
 import Blog from "./pages/Blog";
 import BlogDetail from "./pages/BlogDetail";
 export default function App() {
- 
+
   return (
    <BrowserRouter>
    <AppProviders>

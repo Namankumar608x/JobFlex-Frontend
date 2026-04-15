@@ -82,12 +82,13 @@ useEffect(()=>{
     setLoading(true);
     try {
       const res=await api("get","api/applications/summary/");
-      // console.log(res);
+      console.log(res.data);
+
   setStats({
   total: res.data.total || 0,
-  applied: res.data.status?.Applied || 0,
-  accepted: res.data.status?.Selected || 0, 
-  rejected: res.data.status?.Rejected || 0
+  applied: res.data.status?.applied || 0,
+  accepted: res.data.status?.accepted || 0, 
+  rejected: res.data.status?.rejected || 0
 });
     } catch (error) {
       console.log("error fetching stats",error);

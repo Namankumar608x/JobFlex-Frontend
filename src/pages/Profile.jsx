@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User,
   Mail,
@@ -51,34 +51,126 @@ function EditableField({ label, value, editing, onChange, type = "text", placeho
   );
 }
 
+function Skeleton({ className }) {
+  return (
+    <div className={`animate-pulse bg-zinc-200 rounded ${className}`} />
+  );
+}
+
 // ── Application stats (static placeholder) ────────────────────────────────
 
 
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default function Profile() {
-  const { user } = useAuth();
-  console.log(user);
+
+  const [user,setUser]=useState();
+  const [loading,setLoading]=useState(false);
   const {stats}=useDashboard();
   // console.log(stats);
   // Editable profile state
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
-    name:     user?.uname  || user?.name  || "",
-    email:    user?.email  || "",
-    role:     user?.role   || "Candidate",
-    bio:      user?.bio    || "",
-    location: user?.location || "",
-    linkedin: user?.linkedin || "",
-    leetcode: user?.leetcode_username || "",
-    codeforces: user?.codeforces_username || "",
-  });
+  name: "",
+  email: "",
+  role: "Candidate",
+  bio: "",
+  location: "",
+  linkedin: "",
+  leetcode: "",
+  codeforces: "",
+  joinedAt: "",
+  is_active: false
+});
   const [savedForm, setSavedForm] = useState({ ...form });
 
   // Resume state
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeSaved, setResumeSaved] = useState(false);
+const formatMonthYear = (dateString) => {
+  if (!dateString) return "";
 
+  const date = new Date(dateString);
+
+  return date.toLocaleString("en-US", {
+    month: "short",
+    year: "numeric",
+  });
+};
+useEffect(()=>{
+  const fetchUser=async()=>{
+try {
+  setLoading(true);
+  const res=await api("get","user/profile/");
+  setUser(res.data);
+  console.log(res.data);
+  const joined=formatMonthYear(res.data?.date_joined);
+  console.log(joined);
+  setForm({
+    name:     res.data?.uname  || "",
+    email:    res.data?.email  || "",
+    role:     res.data?.role   || "Candidate",
+    bio:     res.data?.bio    || "",
+    location: res.data?.location || "",
+    linkedin: res.data?.linkedin || "",
+    leetcode: res.data?.leetcode_username || "",
+    codeforces: res.data?.codeforces_username || "",
+    joinedAt:joined,
+    is_active:res.data?.is_active
+  }
+  )
+} catch (error) {
+  console.log("profile fetching error:",error);
+}
+finally{
+  setLoading(false);
+}
+  }
+fetchUser();
+},[])
+
+if (loading) {
+  return (
+    <Sidebar>
+      <div className="p-6 space-y-6">
+
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-10 w-28 rounded-xl" />
+        </div>
+
+        {/* Profile Card */}
+        <div className="bg-white border rounded-2xl p-6 flex gap-6">
+          <Skeleton className="w-20 h-20 rounded-2xl" />
+
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-60" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+
+        {/* Form Section */}
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+
+      </div>
+    </Sidebar>
+  );
+}
 const APP_STATS = [
   {
     label: "Total Applied",
@@ -116,6 +208,10 @@ const handleSave = async () => {
       linkedin_url: form.linkedin,
       leetcode_username: form.leetcode,
       codeforces_username: form.codeforces,
+      uname:     form.name, 
+    role:     form.role ,
+    bio:     form.bio   ,
+    location: form.location ,
     };
 
     await api("post", "user/update-profile-links/", payload);
@@ -242,7 +338,7 @@ const handleSave = async () => {
               <EditableField
                 label="Email Address"
                 value={form.email}
-                editing={editing}
+               
                 onChange={handleField("email")}
                 type="email"
                 placeholder="you@example.com"
@@ -283,18 +379,10 @@ const handleSave = async () => {
               <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">
                 Account Role
               </label>
-              {editing ? (
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-                  className="bg-zinc-50 border border-zinc-200 rounded-lg px-3.5 py-2.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-400 transition-all"
-                >
-                  <option value="Candidate">Candidate</option>
-                  <option value="Recruiter">Recruiter</option>
-                </select>
-              ) : (
+             
+           
                 <p className="text-sm text-zinc-800 font-medium py-2.5">{form.role}</p>
-              )}
+      
             </div>
 
             {/* Bio */}
@@ -375,7 +463,7 @@ const handleSave = async () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-zinc-50">
                 <span className="text-xs text-zinc-400 font-medium">Member since</span>
-                <span className="text-xs text-zinc-700 font-semibold">Jan 2025</span>
+                <span className="text-xs text-zinc-700 font-semibold">{form.joinedAt}</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-zinc-50">
                 <span className="text-xs text-zinc-400 font-medium">Plan</span>
@@ -387,7 +475,7 @@ const handleSave = async () => {
                 <span className="text-xs text-zinc-400 font-medium">Status</span>
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-xs text-zinc-700 font-semibold">Active</span>
+                  <span className="text-xs text-zinc-700 font-semibold">{form.is_active?"Active":"Inactive"}</span>
                 </div>
               </div>
             </div>

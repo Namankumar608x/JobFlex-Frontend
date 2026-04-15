@@ -163,12 +163,12 @@ export default function ScanEmailsPage() {
                 {email.subject}
               </h3>
               <p className="text-[11px] text-zinc-400 mb-3">
-                From: <span className="text-zinc-600">{email.sender}</span> • {email.date}
+                From: <span className="text-zinc-600">{email.recruiter}</span> • {email.recent_thread[0].date}
               </p>
 
               <div className="bg-zinc-50 p-3 rounded-xl border border-zinc-100">
                 <p className="text-[11px] text-zinc-500 line-clamp-3 leading-relaxed">
-                  {email.snippet || "No snippet available."}
+                  {email.recent_thread[0].snippet || "No snippet available."}
                 </p>
               </div>
             </div>
